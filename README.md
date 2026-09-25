@@ -5,16 +5,18 @@
 为**安卓版微信输入法**提供 Material You / Monet 动态配色的
 Magisk / KernelSU Overlay 模块，以及保持原包名的独立 Monet 安装包。
 
-[![GitHub release](https://img.shields.io/github/v/release/0x1e93d/WeType_Monet?style=flat-square&label=Release&color=34C759)](https://github.com/0x1e93d/WeType_Monet/releases)
+[![GitHub release](https://img.shields.io/github/v/release/CnGyZzh/WeType_Monet-Gy?style=flat-square&label=Release&color=34C759)](https://github.com/CnGyZzh/WeType_Monet-Gy/releases)
 [![License](https://img.shields.io/badge/License-GPL--3.0-blue.svg?style=flat-square)](LICENSE)
 [![Android](https://img.shields.io/badge/Android-14%2B-3DDC84?style=flat-square&logo=android&logoColor=white)](https://developer.android.com/about/versions/14)
 [![Magisk](https://img.shields.io/badge/Magisk-%E2%9C%94-00B4D8?style=flat-square)](https://github.com/topjohnwu/Magisk)
 [![KernelSU](https://img.shields.io/badge/KernelSU-%E2%9C%94-7C4DFF?style=flat-square)](https://github.com/tiann/KernelSU)
-[![CI](https://img.shields.io/github/actions/workflow/status/0x1e93d/WeType_Monet/auto-update.yml?style=flat-square&label=Build)](https://github.com/0x1e93d/WeType_Monet/actions)
+[![CI](https://img.shields.io/github/actions/workflow/status/CnGyZzh/WeType_Monet-Gy/auto-update.yml?style=flat-square&label=Build)](https://github.com/CnGyZzh/WeType_Monet-Gy/actions)
 
 </div>
 
 > 让微信输入法跟随系统壁纸自动取色，呈现原生 Android 14+ 的 Material You 动态配色。
+
+> ⚠️ **个人自用分支**：本仓库为 [@0x1e93d/WeType_Monet](https://github.com/0x1e93d/WeType_Monet) 的 fork，**仅适配微信输入法测试版**，随缘更新、不作长期维护。感谢原作者 [@0x1e93d](https://github.com/0x1e93d) 的开源工作！
 
 ## ✨ 特性
 
@@ -31,7 +33,7 @@ Magisk / KernelSU Overlay 模块，以及保持原包名的独立 Monet 安装�
 
 > 需要 Android 14+，以及已启用的 Magisk 或 KernelSU。模块依赖已安装的官方微信输入法。
 
-1. 在 [Releases](https://github.com/0x1e93d/WeType_Monet/releases) 下载最新的 `Wetype_Monet_vN.zip`
+1. 在 [Releases](https://github.com/CnGyZzh/WeType_Monet-Gy/releases) 下载最新的 `Wetype_Monet_vN.zip`
 2. 用 Magisk 或 KernelSU 安装该 ZIP
 3. 重启设备后使用微信输入法
 
@@ -64,9 +66,11 @@ Magisk / KernelSU Overlay 模块，以及保持原包名的独立 Monet 安装�
 | `wetype_monet.json` | KernelSU / Magisk 在线更新清单 |
 | `CHANGELOG.md` | KernelSU 在线更新界面展示的更新日志 |
 
-## 🔧 自动构建
+> 本分支 Release 目前仅提供 Overlay 模块 ZIP；独立 Monet APK 与官方 APK 归档见上游仓库。
 
-GitHub Actions 每天北京时间 **06:00** 检查微信输入法更新，核心文件提交到 `main` 时也会触发。当上游 APK 或 `config/base.json` 的有效内容变化时，流水线会递增模块版本并生成 ZIP、官方 APK 归档与 Monet APK。
+## 🔧 构建与更新
+
+本分支**随缘更新**：仅在微信输入法测试版需要适配时手动触发构建（GitHub Actions `Manual force update` 工作流），不提供定时自动构建。构建流程沿用上游 [@0x1e93d](https://github.com/0x1e93d) 的自动化脚本。
 
 ## ❓ 常见问题
 
@@ -90,5 +94,7 @@ Monet 动态取色依赖 Android 12+ 的 Material You，而本项目的 Overlay 
 </details>
 
 ## 📄 许可证
+
+本项目基于上游 [@0x1e93d/WeType_Monet](https://github.com/0x1e93d/WeType_Monet) 修改。
 
 [GPL-3.0](LICENSE) © [0x1e93d](https://github.com/0x1e93d)
