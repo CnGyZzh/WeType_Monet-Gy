@@ -1,3 +1,4 @@
 out/
 overlay/res/
 __pycache__/
+.tools/
