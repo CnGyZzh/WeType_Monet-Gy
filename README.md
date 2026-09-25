@@ -23,7 +23,7 @@ Magisk / KernelSU Overlay 模块，以及保持原包名的独立 Monet 安装�
 - 🎨 **Monet 动态色彩** — 键盘、候选栏、工具栏、菜单等界面全部跟随系统 Material You 配色，深浅色自动切换
 - 🧩 **两种安装方式** — Magisk / KernelSU Overlay 模块（免改包名、可回滚），或独立 Monet APK（免 Root）
 - ⚡ **KernelSU 免重启热更新** — 首次安装后，后续更新热安装即可生效，无需重启设备
-- 🔄 **自动跟进上游** — GitHub Actions 每天自动检查微信输入法新版本并构建发布
+- 🧪 **适配微信输入法测试版** — 针对测试版 APK 适配，随缘更新
 - 👥 **多用户支持** — KernelSU 安装器可检测多用户环境，按需为其他用户安装
 - 🛡️ **可随时回滚** — Overlay 模块卸载即恢复官方原样
 
@@ -83,7 +83,7 @@ Monet 动态取色依赖 Android 12+ 的 Material You，而本项目的 Overlay 
 <details>
 <summary><b>微信输入法更新后主题失效了怎么办？</b></summary>
 
-等待本项目 Release 适配新版本后更新即可；GitHub Actions 会自动跟进上游版本。
+等待本分支 Release 适配新版本后更新即可；如测试版变化较大，作者会随缘更新适配。
 </details>
 
 <details>
