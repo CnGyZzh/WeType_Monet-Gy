@@ -72,6 +72,11 @@ Magisk / KernelSU Overlay 模块，以及保持原包名的独立 Monet 安装�
 
 本分支**随缘更新**：仅在微信输入法测试版需要适配时手动触发构建（GitHub Actions `Manual force update` 工作流），不提供定时自动构建。构建流程沿用上游 [@0x1e93d](https://github.com/0x1e93d) 的自动化脚本。
 
+### 手动触发构建（两种方式）
+
+1. **自动适配官方最新版**：仓库页 → **Actions** → 左侧选择 `Manual force update` → **Run workflow** → 直接点绿色 Run 按钮即可。
+2. **适配指定测试版 APK**：同样的位置，在 `apk_url` 输入框粘贴测试版 APK 的**下载直链**（例如上传到网盘/对象存储后的直链），工作流会下载该 APK 并自动完成适配、构建与发布。
+
 ## ❓ 常见问题
 
 <details>

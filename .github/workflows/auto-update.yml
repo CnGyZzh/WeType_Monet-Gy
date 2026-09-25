@@ -25,6 +25,11 @@ on:
         required: false
         type: boolean
         default: false
+      apk_url:
+        description: "Optional custom APK download URL (e.g. beta build)"
+        required: false
+        type: string
+        default: ""
 
 permissions: {}
 
@@ -103,6 +108,7 @@ jobs:
         env:
           ANDROID_HOME: ${{ env.ANDROID_HOME }}
           FORCE_BUILD: ${{ inputs.force_build || false }}
+          APK_URL: ${{ inputs.apk_url }}
         run: python scripts/build.py
 
       - name: Read build metadata

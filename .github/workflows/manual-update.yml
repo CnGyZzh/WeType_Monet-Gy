@@ -8,6 +8,11 @@ on:
         required: true
         type: boolean
         default: true
+      apk_url:
+        description: "可选：微信输入法测试版 APK 的下载直链。留空则使用官方最新版。"
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -18,4 +23,5 @@ jobs:
     uses: ./.github/workflows/auto-update.yml
     with:
       force_build: true
+      apk_url: ${{ inputs.apk_url }}
     secrets: inherit

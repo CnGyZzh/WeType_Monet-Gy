@@ -39,7 +39,7 @@ PUBLIC_SIGNING_PASSWORD = "114514"
 PUBLIC_SIGNING_ALIAS = "114514"
 HLD_PACKAGE_PATH = Path("com/tencent/wetype/plugin/hld")
 
-APK_URL = "https://z.weixin.qq.com/android/download?channel=latest"
+APK_URL = os.environ.get("APK_URL") or "https://z.weixin.qq.com/android/download?channel=latest"
 CHANGELOG_URL = "https://z.weixin.qq.com/web/changelog/android"
 
 MODULE_ID = "Wetype_Monet"
