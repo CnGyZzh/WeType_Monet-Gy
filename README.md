@@ -1,20 +1,24 @@
 <div align="center">
 
-# 微信输入法 Monet
+<img width="100%" alt="WeType Monet banner" src="https://capsule-render.vercel.app/api?type=waving&height=175&text=WeType%20Monet&fontSize=48&fontAlignY=38&fontColor=FFFFFF&animation=fadeIn&color=0:0D1117,50:7C4DFF,100:EC4899" />
 
-为**安卓版微信输入法**提供 Material You / Monet 动态配色的
-Magisk / KernelSU Overlay 模块，以及保持原包名的独立 Monet 安装包。
+# 微信输入法 · Monet
 
-[![GitHub release](https://img.shields.io/github/v/release/CnGyZzh/WeType_Monet-Gy?style=flat-square&label=Release&color=34C759)](https://github.com/CnGyZzh/WeType_Monet-Gy/releases)
+**让微信输入法跟随系统壁纸，拥有原生 Android 的 Material You 动态配色。**
+
+<a href="https://github.com/CnGyZzh/WeType_Monet-Gy/releases"><img src="https://img.shields.io/badge/Download-Releases-7C4DFF?style=for-the-badge&logo=github&logoColor=white" alt="Download releases" /></a>
+<a href="#安装"><img src="https://img.shields.io/badge/Read-Installation-EC4899?style=for-the-badge" alt="Read installation guide" /></a>
+
+[![GitHub release](https://img.shields.io/github/v/release/CnGyZzh/WeType_Monet-Gy?style=flat-square&label=Release&color=7C4DFF)](https://github.com/CnGyZzh/WeType_Monet-Gy/releases)
 [![License](https://img.shields.io/badge/License-GPL--3.0-blue.svg?style=flat-square)](LICENSE)
 [![Android](https://img.shields.io/badge/Android-14%2B-3DDC84?style=flat-square&logo=android&logoColor=white)](https://developer.android.com/about/versions/14)
 [![Magisk](https://img.shields.io/badge/Magisk-%E2%9C%94-00B4D8?style=flat-square)](https://github.com/topjohnwu/Magisk)
 [![KernelSU](https://img.shields.io/badge/KernelSU-%E2%9C%94-7C4DFF?style=flat-square)](https://github.com/tiann/KernelSU)
 [![CI](https://img.shields.io/github/actions/workflow/status/CnGyZzh/WeType_Monet-Gy/auto-update.yml?style=flat-square&label=Build)](https://github.com/CnGyZzh/WeType_Monet-Gy/actions)
 
-</div>
+[特性](#特性) · [安装](#安装) · [发布产物](#发布产物) · [构建与更新](#构建与更新) · [常见问题](#常见问题)
 
-> 让微信输入法跟随系统壁纸自动取色，呈现原生 Android 14+ 的 Material You 动态配色。
+</div>
 
 > ⚠️ **个人自用分支**：本仓库为 [@0x1e93d/WeType_Monet](https://github.com/0x1e93d/WeType_Monet) 的 fork，**仅适配微信输入法测试版**，随缘更新、不作长期维护。感谢原作者 [@0x1e93d](https://github.com/0x1e93d) 的开源工作！
 
