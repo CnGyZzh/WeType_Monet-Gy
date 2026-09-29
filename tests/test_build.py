@@ -379,8 +379,8 @@ class BuildMappingTests(unittest.TestCase):
             {
                 "versionCode": 2,
                 "version": "v2",
-                "zipUrl": "https://github.com/0x1e93d/WeType_Monet/releases/download/v2/Wetype_Monet_v2.zip",
-                "changelog": "https://raw.githubusercontent.com/0x1e93d/WeType_Monet/main/CHANGELOG.md",
+                "zipUrl": f"https://github.com/{build.REPOSITORY_SLUG}/releases/download/v2/Wetype_Monet_v2.zip",
+                "changelog": f"https://raw.githubusercontent.com/{build.REPOSITORY_SLUG}/main/CHANGELOG.md",
             },
         )
 
