@@ -71,8 +71,7 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
-      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
-
+      # GitHub ubuntu-latest already provides Android SDK/build tooling.\n      # setup-android v3 currently requests the removed legacy SDK package `tools`,\n      # so avoid that obsolete installation step and use the runner SDK directly.\n
       - name: Install build tools
         run: |
           sudo apt-get update
