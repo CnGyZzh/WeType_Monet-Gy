@@ -44,7 +44,7 @@ CHANGELOG_URL = "https://z.weixin.qq.com/web/changelog/android"
 
 MODULE_ID = "Wetype_Monet"
 MODULE_NAME = "微信输入法 Monet"
-MODULE_AUTHOR = "酷安@1e93d"
+MODULE_AUTHOR = "酷安@1e93d&Gy"
 MODULE_DESCRIPTION = "为微信输入法提供 Monet 动态色彩主题。"
 REPOSITORY_SLUG = os.environ.get("GITHUB_REPOSITORY", "0x1e93d/WeType_Monet")
 UPDATE_JSON_URL = f"https://raw.githubusercontent.com/{REPOSITORY_SLUG}/main/wetype_monet.json"
@@ -1001,10 +1001,11 @@ def prepare_template():
     if TEMPLATE_DIR.exists():
         shutil.copytree(TEMPLATE_DIR, BUILD_TMP_DIR, dirs_exist_ok=True)
 
-def generate_module_prop(module_version: int) -> tuple[str, str]:
-    """生成模块属性清单 module.prop。"""
-    version_name = format_module_version(module_version)
-    version_code = str(module_version)
+def generate_module_prop(module_version: int, apk_name: str, apk_code: str) -> tuple[str, str]:
+    """生成模块属性清单 module.prop；显示版本跟随微信输入法版本。"""
+    version_name = f"{apk_name} ({apk_code})" if apk_code else apk_name
+    # KernelSU/Magisk 要求 versionCode 为整数；优先直接使用微信输入法 versionCode。
+    version_code = str(int(apk_code)) if str(apk_code).isdigit() else str(module_version)
     build_time = current_build_time()
     description = f"{MODULE_DESCRIPTION} [构建时间: {build_time}]"
 
@@ -1107,7 +1108,7 @@ def main():
         next_module_version = get_next_module_version(
             previous_state, get_existing_module_versions()
         )
-        module_version, version_code = generate_module_prop(next_module_version)
+        module_version, version_code = generate_module_prop(next_module_version, apk_name, apk_code)
         signing_keystore = prepare_public_signing_keystore()
         build_overlay_apk(signing_keystore)
         monet_apk_path = build_monet_apk(
