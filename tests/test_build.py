@@ -226,16 +226,20 @@ class BuildMappingTests(unittest.TestCase):
         self.assertEqual(build.get_next_module_version({"module_version": 1}), 2)
         self.assertEqual(build.get_next_module_version({"module_version": 2}, {3, 4}), 5)
 
-    def test_module_metadata_uses_latest_integer_version(self):
+    def test_module_metadata_uses_wetype_version_and_coauthor(self):
         build.BUILD_TMP_DIR.mkdir(parents=True)
 
-        self.assertEqual(build.generate_module_prop(2), ("v2", "2"))
+        self.assertEqual(
+            build.generate_module_prop(13, "4.0.0", "57201"),
+            ("4.0.0.58107(57201)", "57201"),
+        )
         module_prop = (build.BUILD_TMP_DIR / "module.prop").read_text(encoding="utf-8")
-        self.assertIn("version=v2", module_prop)
-        self.assertIn("versionCode=2", module_prop)
+        self.assertIn("version=4.0.0.58107(57201)", module_prop)
+        self.assertIn("versionCode=57201", module_prop)
+        self.assertIn("author=酷安@1e93d&Gy", module_prop)
         self.assertIn(f"updateJson={build.UPDATE_JSON_URL}", module_prop)
-        self.assertEqual(build.get_module_zip_filename(2), "Wetype_Monet_v2.zip")
-        self.assertEqual(build.get_release_title("3.5.4", 2), "微信输入法_3.5.4_v2")
+        self.assertEqual(build.get_module_zip_filename(13), "Wetype_Monet_v13.zip")
+        self.assertEqual(build.get_release_title("4.0.0", 13), "微信输入法_4.0.0_v13")
 
     def test_archive_official_apk_uses_release_filename(self):
         build.DOWNLOAD_APK_PATH.write_bytes(b"official-apk")
