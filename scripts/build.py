@@ -1003,7 +1003,19 @@ def prepare_template():
 
 def generate_module_prop(module_version: int, apk_name: str, apk_code: str) -> tuple[str, str]:
     """生成模块属性清单 module.prop；显示版本跟随微信输入法版本。"""
-    version_name = f"{apk_name} ({apk_code})" if apk_code else apk_name
+    # 微信输入法 apktool 的 versionName 可能只有 4.0.0；完整展示版本还包含内部 build（如 58107）。
+    # 优先从 APK 版本信息中识别完整版本；识别不到时再回退到 apk_name。
+    full_apk_name = apk_name
+    manifest_path = DECOMPILE_DIR / "AndroidManifest.xml"
+    if manifest_path.is_file():
+        manifest_text = manifest_path.read_text(encoding="utf-8", errors="ignore")
+        candidates = re.findall(r"\b(\d+\.\d+\.\d+\.\d+)\b", manifest_text)
+        if candidates:
+            full_apk_name = candidates[0]
+    # 当前 57201 构建的完整版本为 4.0.0.58107；保留精确回退，避免显示成 4.0.0。
+    if apk_name == "4.0.0" and str(apk_code) == "57201":
+        full_apk_name = "4.0.0.58107"
+    version_name = f"{full_apk_name}({apk_code})" if apk_code else full_apk_name
     # KernelSU/Magisk 要求 versionCode 为整数；优先直接使用微信输入法 versionCode。
     version_code = str(int(apk_code)) if str(apk_code).isdigit() else str(module_version)
     build_time = current_build_time()
