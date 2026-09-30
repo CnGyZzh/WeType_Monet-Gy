@@ -1,28 +1,18 @@
 <div align="center">
 
-<img width="100%" alt="WeType Monet banner" src="https://capsule-render.vercel.app/api?type=waving&height=175&text=WeType%20Monet&fontSize=48&fontAlignY=38&fontColor=FFFFFF&animation=fadeIn&color=0:0D1117,50:7C4DFF,100:EC4899" />
+<img src="assets/readme-banner.svg" width="100%" alt="微信输入法 · Monet" />
 
 # 微信输入法 · Monet
 
-**让微信输入法跟随系统壁纸，拥有原生 Android 的 Material You 动态配色。**
+跟随系统壁纸的 Material You 动态配色 · Android 14+
 
-<a href="https://github.com/CnGyZzh/WeType_Monet-Gy/releases"><img src="https://img.shields.io/badge/Download-Releases-7C4DFF?style=for-the-badge&logo=github&logoColor=white" alt="Download releases" /></a>
-<a href="#安装"><img src="https://img.shields.io/badge/Read-Installation-EC4899?style=for-the-badge" alt="Read installation guide" /></a>
-
-[![GitHub release](https://img.shields.io/github/v/release/CnGyZzh/WeType_Monet-Gy?style=flat-square&label=Release&color=7C4DFF)](https://github.com/CnGyZzh/WeType_Monet-Gy/releases)
-[![License](https://img.shields.io/badge/License-GPL--3.0-blue.svg?style=flat-square)](LICENSE)
-[![Android](https://img.shields.io/badge/Android-14%2B-3DDC84?style=flat-square&logo=android&logoColor=white)](https://developer.android.com/about/versions/14)
-[![Magisk](https://img.shields.io/badge/Magisk-%E2%9C%94-00B4D8?style=flat-square)](https://github.com/topjohnwu/Magisk)
-[![KernelSU](https://img.shields.io/badge/KernelSU-%E2%9C%94-7C4DFF?style=flat-square)](https://github.com/tiann/KernelSU)
-[![CI](https://img.shields.io/github/actions/workflow/status/CnGyZzh/WeType_Monet-Gy/auto-update.yml?style=flat-square&label=Build)](https://github.com/CnGyZzh/WeType_Monet-Gy/actions)
-
-[特性](#特性) · [安装](#安装) · [发布产物](#发布产物) · [构建与更新](#构建与更新) · [常见问题](#常见问题)
+[下载发布](https://github.com/CnGyZzh/WeType_Monet-Gy/releases) · [安装](#安装) · [发布产物](#发布产物) · [构建与更新](#构建与更新) · [更新日志](CHANGELOG.md)
 
 </div>
 
 > ⚠️ **个人自用分支**：本仓库为 [@0x1e93d/WeType_Monet](https://github.com/0x1e93d/WeType_Monet) 的 fork，**仅适配微信输入法测试版**，随缘更新、不作长期维护。感谢原作者 [@0x1e93d](https://github.com/0x1e93d) 的开源工作！
 
-## ✨ 特性
+## 特性
 
 - 🎨 **Monet 动态色彩** — 键盘、候选栏、工具栏、菜单等界面全部跟随系统 Material You 配色，深浅色自动切换
 - 🧩 **两种安装方式** — Magisk / KernelSU Overlay 模块（免改包名、可回滚），或独立 Monet APK（免 Root）
@@ -31,7 +21,12 @@
 - 👥 **多用户支持** — KernelSU 安装器可检测多用户环境，按需为其他用户安装
 - 🛡️ **可随时回滚** — Overlay 模块卸载即恢复官方原样
 
-## 📱 安装
+## 安装
+
+| 你的环境 | 建议路线 | 注意事项 |
+| :--- | :--- | :--- |
+| Android 14+ 且有 Magisk / KernelSU | Overlay ZIP | 依赖匹配版本的官方输入法。 |
+| 希望使用独立安装包 | Monet APK | 与官方版同包名、不同签名，不能共存；先备份数据。 |
 
 ### Magisk / KernelSU Overlay 模块
 
@@ -60,7 +55,7 @@
 
 > 如需回到官方版本：卸载 Monet APK → 安装同一 Release 提供的官方原始 APK，或从[微信输入法官网](https://z.weixin.qq.com/)下载。
 
-## 📦 发布产物
+## 发布产物
 
 | 产物 | 说明 |
 | --- | --- |
@@ -70,18 +65,43 @@
 | `wetype_monet.json` | KernelSU / Magisk 在线更新清单 |
 | `CHANGELOG.md` | KernelSU 在线更新界面展示的更新日志 |
 
-> 本分支 Release 目前仅提供 Overlay 模块 ZIP；独立 Monet APK 与官方 APK 归档见上游仓库。
+> 当前发布工作流会上传 Overlay ZIP、独立 Monet APK 和官方原始 APK；具体可下载文件以对应 Release 的 Assets 为准。请按已安装输入法的版本选择匹配产物。
 
-## 🔧 构建与更新
+## 构建与更新
 
-本分支**随缘更新**：仅在微信输入法测试版需要适配时手动触发构建（GitHub Actions `Manual force update` 工作流），不提供定时自动构建。构建流程沿用上游 [@0x1e93d](https://github.com/0x1e93d) 的自动化脚本。
+构建脚本与资源映射沿用上游工作，并在本分支进行适配。当前配置支持定时检查、相关源码变更触发，以及手动强制构建。
 
-### 手动触发构建（两种方式）
+| 工作流 | 作用 |
+| :--- | :--- |
+| [Manual force update](.github/workflows/manual-update.yml) | 手动指定 APK 下载地址并强制构建；需要勾选 confirm。 |
+| [Auto check WeType version and release](.github/workflows/auto-update.yml) | 定时或相关文件变更时检测、测试、构建并发布。 |
+| [Test WeType Monet](.github/workflows/test.yml) | 运行 Python 测试、脚本语法检查与测试构建。 |
 
-1. **自动适配官方最新版**：仓库页 → **Actions** → 左侧选择 `Manual force update` → **Run workflow** → 直接点绿色 Run 按钮即可。
-2. **适配指定测试版 APK**：同样的位置，在 `apk_url` 输入框粘贴测试版 APK 的**下载直链**（例如上传到网盘/对象存储后的直链），工作流会下载该 APK 并自动完成适配、构建与发布。
+### 手动构建
 
-## ❓ 常见问题
+1. 打开 **Actions → Manual force update → Run workflow**。
+2. 检查 confirm 与 apk_url。当前表单预填的是测试版 APK 地址，**不等于自动选择官方最新版**；需要其他版本时填写对应下载直链。
+3. 等待测试与构建完成，在 Releases 查看产物与适配版本。
+
+### 目录导航
+
+| 路径 | 用途 |
+| :--- | :--- |
+| [scripts/build.py](scripts/build.py) | APK 下载、资源映射、构建和产物生成。 |
+| [config](config) | 基础配置、版本映射与发布状态。 |
+| [overlay](overlay) | Overlay 清单与资源。 |
+| [module_template](module_template) | 模块安装与启动脚本。 |
+| [tests](tests) | 构建逻辑测试。 |
+
+本地运行映射测试（Python 3.11）：
+
+```sh
+python -m unittest discover -s tests -v
+```
+
+完整构建另需 Java 17、Android SDK、Apktool、zipalign 与 apksigner 等工具，依赖安装步骤以构建工作流为准。
+
+## 常见问题
 
 <details>
 <summary><b>为什么需要 Android 14+？</b></summary>
@@ -102,7 +122,7 @@ Monet 动态取色依赖 Android 12+ 的 Material You，而本项目的 Overlay 
 - 未 Root → 用 **独立 Monet APK**，但需卸载官方版且不能共存
 </details>
 
-## 📄 许可证
+## 许可证
 
 本项目基于上游 [@0x1e93d/WeType_Monet](https://github.com/0x1e93d/WeType_Monet) 修改。
 
