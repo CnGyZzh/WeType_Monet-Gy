@@ -127,3 +127,10 @@ Monet 动态取色依赖 Android 12+ 的 Material You，而本项目的 Overlay 
 本项目基于上游 [@0x1e93d/WeType_Monet](https://github.com/0x1e93d/WeType_Monet) 修改。
 
 [GPL-3.0](LICENSE) © [0x1e93d](https://github.com/0x1e93d)
+
+
+## CnGyZzh Ecosystem
+
+**[CnGyZzh Profile](https://github.com/CnGyZzh/CnGyZzh)** · **[Level](https://github.com/CnGyZzh/Level)** · **[HyperMax](https://github.com/CnGyZzh/HyperMax)** · **[ZEEHO Auto](https://github.com/CnGyZzh/ZEEHO-Auto-Gy)**
+
+> 项目索引与公开活动统一由 **Level** 汇总，个人主页由 **CnGyZzh** 作为展示入口。
