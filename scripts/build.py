@@ -1083,8 +1083,10 @@ def write_build_metadata(
         "zip_file": zip_path.name,
         "official_apk_file": official_apk_path.name,
         "monet_apk_file": monet_apk_path.name,
-        "release_tag": module_version,
-        "release_title": get_release_title(apk_name, int(version_code)),
+        # The release tag is the module version (vN). The upstream APK version
+        # belongs in the release body and must not become the Git tag.
+        "release_tag": format_module_version(int(module_version)),
+        "release_title": get_release_title(apk_name, int(module_version)),
         "build_time": current_build_time(),
     }
     BUILD_METADATA_PATH.parent.mkdir(parents=True, exist_ok=True)
