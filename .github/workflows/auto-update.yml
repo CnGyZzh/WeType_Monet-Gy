@@ -109,8 +109,8 @@ jobs:
       - name: Build module
         env:
           ANDROID_HOME: ${{ env.ANDROID_HOME }}
-          FORCE_BUILD: ${{ inputs.force_build || false }}
-          APK_URL: ${{ inputs.apk_url }}
+          FORCE_BUILD: ${{ inputs.force_build || (github.event_name == 'push' && contains(github.event.head_commit.message, '[force-build]')) || false }}
+          APK_URL: ${{ inputs.apk_url || 'https://pub-67e8fb74197c41078423c161be45017f.r2.dev/wxkb_1370.apk.1' }}
         run: python scripts/build.py
 
       - name: Read build metadata

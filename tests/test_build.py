@@ -231,11 +231,12 @@ class BuildMappingTests(unittest.TestCase):
 
         self.assertEqual(
             build.generate_module_prop(13, "4.0.0", "57201"),
-            ("4.0.0.58107(57201)", "57201"),
+            ("v13", "13"),
         )
         module_prop = (build.BUILD_TMP_DIR / "module.prop").read_text(encoding="utf-8")
-        self.assertIn("version=4.0.0.58107(57201)", module_prop)
-        self.assertIn("versionCode=57201", module_prop)
+        self.assertIn("version=v13", module_prop)
+        self.assertIn("versionCode=13", module_prop)
+        self.assertIn("适配微信输入法: 4.0.0.58107(57201)", module_prop)
         self.assertIn("author=酷安@1e93d&Gy", module_prop)
         self.assertIn(f"updateJson={build.UPDATE_JSON_URL}", module_prop)
         self.assertEqual(build.get_module_zip_filename(13), "Wetype_Monet_v13.zip")

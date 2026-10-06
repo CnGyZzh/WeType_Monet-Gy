@@ -1002,7 +1002,7 @@ def prepare_template():
         shutil.copytree(TEMPLATE_DIR, BUILD_TMP_DIR, dirs_exist_ok=True)
 
 def generate_module_prop(module_version: int, apk_name: str, apk_code: str) -> tuple[str, str]:
-    """生成模块属性清单 module.prop；显示版本跟随微信输入法版本。"""
+    """模块版本与发布版本保持一致；输入法版本只写入适配说明。"""
     # 微信输入法 apktool 的 versionName 可能只有 4.0.0；完整展示版本还包含内部 build（如 58107）。
     # 优先从 APK 版本信息中识别完整版本；识别不到时再回退到 apk_name。
     full_apk_name = apk_name
@@ -1015,11 +1015,11 @@ def generate_module_prop(module_version: int, apk_name: str, apk_code: str) -> t
     # 当前 57201 构建的完整版本为 4.0.0.58107；保留精确回退，避免显示成 4.0.0。
     if apk_name == "4.0.0" and str(apk_code) == "57201":
         full_apk_name = "4.0.0.58107"
-    version_name = f"{full_apk_name}({apk_code})" if apk_code else full_apk_name
-    # KernelSU/Magisk 要求 versionCode 为整数；优先直接使用微信输入法 versionCode。
-    version_code = str(int(apk_code)) if str(apk_code).isdigit() else str(module_version)
+    version_name = format_module_version(module_version)
+    # KernelSU/Magisk 的在线更新比较必须使用相同的模块版本序号。
+    version_code = str(module_version)
     build_time = current_build_time()
-    description = f"{MODULE_DESCRIPTION} [构建时间: {build_time}]"
+    description = f"{MODULE_DESCRIPTION} [适配微信输入法: {full_apk_name}({apk_code})] [构建时间: {build_time}]"
 
     lines = [
         f"id={MODULE_ID}",

@@ -9,10 +9,10 @@ on:
         type: boolean
         default: true
       apk_url:
-        description: "可选：微信输入法测试版 APK 的下载直链。默认使用 R2 中的 4.0.0.58107(57201)。"
+        description: "微信输入法测试版 APK 下载直链，默认使用当前 R2 测试版。"
         required: false
         type: string
-        default: "https://pub-67e8fb74197c41078423c161be45017f.r2.dev/wxkb_1366.apk.1"
+        default: "https://pub-67e8fb74197c41078423c161be45017f.r2.dev/wxkb_1370.apk.1"
 
 permissions:
   contents: write
