@@ -1133,7 +1133,7 @@ def main():
         zip_path = create_module_zip(next_module_version)
         official_apk_path = archive_official_apk(apk_name, apk_code)
         write_build_metadata(
-            module_version,
+            next_module_version,
             version_code,
             apk_name,
             apk_code,
