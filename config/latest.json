@@ -1,6 +1,6 @@
 {
     "state_version": 1,
-    "module_version": 15,
+    "module_version": 16,
     "base_sha256": "7eea36b02f0215a4b8ccfa0c5d1af03b55612573130926aa82545b313348436b",
     "upstream": {
         "version_name": "4.0.0",
@@ -10,7 +10,7 @@
         "config_file": "targets/4.0.0(57201).json"
     },
     "release": {
-        "tag": "v15",
-        "title": "微信输入法_4.0.0_v15"
+        "tag": "v16",
+        "title": "微信输入法_4.0.0_v16"
     }
 }
