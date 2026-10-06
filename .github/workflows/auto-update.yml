@@ -1,5 +1,8 @@
 name: Auto check WeType version and release
 
+# Keep the scheduled/manual pipeline active when the APK at the configured
+# cloud URL is replaced with a newer beta build.
+
 on:
   push:
     branches: [main]
