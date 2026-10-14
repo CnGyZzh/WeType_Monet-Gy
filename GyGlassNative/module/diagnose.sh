@@ -12,15 +12,18 @@ SDK=$(getprop ro.build.version.sdk 2>/dev/null)
 case "$SDK" in ''|*[!0-9]*) SDK=unknown;; esac
 printf 'ANDROID_SDK=%s\n' "$SDK"
 if pm path "$PKG" >/dev/null 2>&1; then
-  VERSION=$(dumpsys package "$PKG" 2>/dev/null | sed -n 's/^[[:space:]]*versionName=\([^[:space:]]*\).*$/\1/p' | head -n 1)
-  case "$VERSION" in
-    4.0.0.58107|4.0.0.58111) PROFILE=4.0.0; COMPAT=KNOWN_BUILD_NOT_RENDER_TESTED;;
-    4.0.0.*) PROFILE=4.0.0; COMPAT=NEW_BUILD_NEEDS_SIGNATURE_CHECK;;
-    '') PROFILE=unknown; COMPAT=VERSION_UNAVAILABLE;;
+  PACKAGE_INFO=$(dumpsys package "$PKG" 2>/dev/null)
+  VERSION=$(printf '%s\n' "$PACKAGE_INFO" | sed -n 's/^[[:space:]]*versionName=\([^[:space:]]*\).*$/\1/p' | head -n 1)
+  BUILD_CODE=$(printf '%s\n' "$PACKAGE_INFO" | sed -n 's/^[[:space:]]*versionCode=\([0-9][0-9]*\).*$/\1/p' | head -n 1)
+  case "$VERSION:$BUILD_CODE" in
+    4.0.0:57206) PROFILE=4.0.0; COMPAT=KNOWN_PACKAGE_NOT_RENDER_TESTED;;
+    4.0.0:*) PROFILE=4.0.0; COMPAT=NEW_BUILD_NEEDS_SIGNATURE_CHECK;;
+    :*) PROFILE=unknown; COMPAT=VERSION_UNAVAILABLE;;
     *) PROFILE=unknown; COMPAT=UNRECOGNIZED_HOST_VERSION;;
   esac
   [ -n "$VERSION" ] || VERSION=unknown
-  printf 'INPUT_VERSION=%s\nPROFILE=%s\nCOMPAT=%s\n' "$VERSION" "$PROFILE" "$COMPAT"
+  [ -n "$BUILD_CODE" ] || BUILD_CODE=unknown
+  printf 'INPUT_VERSION=%s\nBUILD_CODE=%s\nPROFILE=%s\nCOMPAT=%s\n' "$VERSION" "$BUILD_CODE" "$PROFILE" "$COMPAT"
 else
   printf 'INPUT_VERSION=not_installed\nPROFILE=none\nCOMPAT=INPUT_METHOD_NOT_INSTALLED\n'
 fi
