@@ -60,13 +60,13 @@ void companion_handler(int fd) {
    if(pid<=0)break;
    const int dir=open(kFolder,O_RDONLY|O_DIRECTORY|O_CLOEXEC|O_NOFOLLOW);
    if(dir>=0) {
-    const int out=openat(dir,"native_events.log",O_WRONLY|O_CREAT|O_APPEND|O_CLOEXEC|O_NOFOLLOW,0600);
+    const int out=openat(dir,"hook_events.txt",O_WRONLY|O_CREAT|O_APPEND|O_CLOEXEC|O_NOFOLLOW,0600);
     if(out>=0) {
      struct stat st{};
      if(fstat(out,&st)==0 && S_ISREG(st.st_mode) && st.st_size<16384) {
       char row[72]{};
-      const int n=std::snprintf(row,sizeof(row),"NATIVE_EVENT_PID=%ld NATIVE_EVENT=%c\n",
-                              static_cast<long>(pid),event);
+      const int n=std::snprintf(row,sizeof(row),"epoch=%ld pid=%ld stage=%c\n",
+                              static_cast<long>(std::time(nullptr)),static_cast<long>(pid),event);
       if(n>0 && static_cast<size_t>(n)<sizeof(row)) (void)write(out,row,static_cast<size_t>(n));
      }
      close(out);
