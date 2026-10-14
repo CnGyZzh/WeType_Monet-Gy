@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.22.1)
+project(gyglass LANGUAGES CXX)
+add_library(gyglass SHARED zygisk_entry.cpp)
+target_include_directories(gyglass PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include)
+target_compile_features(gyglass PRIVATE cxx_std_17)
+target_compile_options(gyglass PRIVATE -fvisibility=hidden -Wall -Wextra -Werror)
+target_link_libraries(gyglass log)
