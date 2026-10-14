@@ -1,17 +1,19 @@
-# Gy 玻璃键盘 · v29 独立 Hook 开发测试
+# GyGlass v30
 
-这是独立实现的微信输入法玻璃键盘实验项目。**不包含 WeTyper APK、原始 DEX、授权校验或激活界面。** Android 应用仅提供 LSPosed Hook 入口，没有桌面 Activity；设置均通过 KernelSU WebUI 操作。
+微信输入法玻璃键盘主题。提供系统 Monet 动态配色、低透明度底板和两套 WebUI 预设：一体式与独立半透明按键，默认一体式。
+
+## 安装和切换
+
+直接在 KernelSU 刷入 GyGlass_v30_KSU.zip；该 ZIP 自动注册内部 Hook 组件，无需额外下载 APK。内部组件无桌面图标和激活页面。重启后在 LSPosed 中启用 GyGlass（包名 com.gy.glass.engine），作用域仅选择微信输入法 com.tencent.wetype。首次启用后可进入 KernelSU WebUI 切换预设，切换时只停止一次输入法进程。
+
+## 性能与兼容
+
+不启用会模糊整个微信聊天窗口的 Window Blur。输入法启动或显示时更新系统 Monet 颜色，无后台定时轮询，不在按键事件中启动 Root 子进程。窗口与键盘内部自绘资源是否透明，仍取决于当前微信输入法与 HyperOS 的绘制实现。
+
+本项目目前为开发测试版。已编译不代表已通过真机适配测试。WebUI 的“配置已保存”不代表 Hook 一定已加载，也不代表玻璃质感达到设计参考图。
 
 ## 构建
 
-GitHub Actions 使用 JDK 17、Gradle 8.7、AGP 8.5.2、Android SDK 35。执行 `gradle :app:assembleDebug`，再将生成的 `app-debug.apk` 放入 `ksu/gyhook.apk`，最后运行 `python3 package.py`。
+JDK 17、Gradle 8.7、AGP 8.5.2、Android SDK 35。运行 `gradle :app:assembleDebug`，将 APK 放置到 `ksu/gyhook.apk`，然后运行 `python3 package.py`。
 
-## 使用与限制
-
-KernelSU 安装 ZIP 后，模块在开机时通过 `pm install` 注册第一方 Hook APK。首次在 LSPosed 中启用 `com.gy.wetype.hook` 并将作用域限制为 `com.tencent.wetype`。旧的 WeTyper / GyGlass Hook 应停用，防止重复 Hook。
-
-默认一体式，WebUI 可切换独立玻璃键帽。采用键盘显示时按需更新 Monet 颜色的方案，没有常驻颜色轮询、按键触发 Root 或逐帧软件模糊。
-
-目前仅实现键帽填充、功能键、描边、阴影及基础窗口背景；工具栏和剪贴板白色卡片尚未独立适配。Android Window Blur 是否生效由 ROM 及微信输入法绘制方式决定，**不保证与 v20.1 完全相同的液态玻璃效果**。
-
-这是开发测试版本。请先备份 KernelSU 模块配置，避免在无法恢复的环境中直接使用。
+本模块由 Gy 开发。
