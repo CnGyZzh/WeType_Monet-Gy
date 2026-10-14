@@ -1,0 +1,6 @@
+GyGlass v29 CI report
+compile_outcome=skipped
+runner_job_status=failure
+utc_date=2026-10-14T04:12:30Z
+--- Gradle log (last 120 lines) ---
+Gradle task not started
