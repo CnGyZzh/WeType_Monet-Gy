@@ -12,6 +12,9 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+concurrency:
+  group: gy-glass-v29-test
+  cancel-in-progress: true
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -29,8 +32,12 @@ jobs:
         with:
           gradle-version: '8.7'
       - name: Compile independent Gy Hook
+        id: compile
         working-directory: GyGlass_Standalone
-        run: gradle --no-daemon :app:assembleDebug --stacktrace
+        shell: bash
+        run: |
+          set -o pipefail
+          gradle --no-daemon :app:assembleDebug --stacktrace 2>&1 | tee /tmp/gyglass-gradle.log
       - name: Package KernelSU ZIP
         working-directory: GyGlass_Standalone
         run: |
@@ -46,12 +53,26 @@ jobs:
             GyGlass_Standalone/out/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 14
-      - name: Publish test ZIP on test branch
+      - name: Publish CI report to isolated test branch
+        if: always()
+        shell: bash
         run: |
+          mkdir -p GyGlass_Standalone/out
+          {
+            echo 'GyGlass v29 CI report'
+            echo "compile_outcome=${{ steps.compile.outcome }}"
+            echo "runner_job_status=${{ job.status }}"
+            echo "utc_date=$(date -u +%FT%TZ)"
+            echo '--- Gradle log (last 120 lines) ---'
+            if test -f /tmp/gyglass-gradle.log; then tail -n 120 /tmp/gyglass-gradle.log; else echo 'Gradle task not started'; fi
+          } > GyGlass_Standalone/out/build-report.txt
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -f GyGlass_Standalone/out/GyGlass_Standalone_v29.zip GyGlass_Standalone/out/SHA256SUMS.txt
+          git add -f GyGlass_Standalone/out/build-report.txt
+          if test -f GyGlass_Standalone/out/GyGlass_Standalone_v29.zip; then
+            git add -f GyGlass_Standalone/out/GyGlass_Standalone_v29.zip GyGlass_Standalone/out/SHA256SUMS.txt
+          fi
           if ! git diff --cached --quiet; then
-            git commit -m 'ci: publish compiled GyGlass test ZIP [skip ci]'
+            git commit -m 'ci: publish GyGlass build report and test ZIP [skip ci]'
             git push origin HEAD:gy-glass-v29-test
           fi
