@@ -47,6 +47,8 @@ jobs:
           /tmp/gyglass_compat_test
           g++ -std=c++17 -Wall -Wextra -Werror GyGlassNative/tests/host_signature_test.cpp -o /tmp/gyglass_host_test
           /tmp/gyglass_host_test
+          g++ -std=c++17 -Wall -Wextra -Werror GyGlassNative/tests/preset_bridge_test.cpp -o /tmp/gyglass_preset_test
+          /tmp/gyglass_preset_test
       - name: Install Android NDK and CMake
         id: sdk
         shell: bash
@@ -72,6 +74,8 @@ jobs:
           cp /tmp/gyglass-build/libgyglass.so GyGlassNative/out/arm64-v8a.so
           sha256sum GyGlassNative/out/arm64-v8a.so > GyGlassNative/out/SHA256SUMS.txt
           file GyGlassNative/out/arm64-v8a.so
+          "$ANDROID_HOME/ndk/27.2.12479018/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf" -Ws GyGlassNative/out/arm64-v8a.so | grep -q 'zygisk_module_entry'
+          "$ANDROID_HOME/ndk/27.2.12479018/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf" -Ws GyGlassNative/out/arm64-v8a.so | grep -q 'zygisk_companion_entry'
       - name: Write diagnostics
         if: always()
         shell: bash
