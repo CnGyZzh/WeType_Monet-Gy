@@ -7,7 +7,12 @@ if [ -s "$D/preset.conf" ]; then
   saved=$(sed -n 's/^MODE=\(seamless\|independent\)$/\1/p' "$D/preset.conf" 2>/dev/null | head -n 1)
   [ -n "$saved" ] && MODE="$saved"
 fi
-printf 'MODE=%s\n' "$MODE"
+KEY_OPACITY=16
+if [ -s "$D/preset.conf" ]; then
+  saved=$(sed -n 's/^KEY_OPACITY=\([0-9][0-9]*\)$/\1/p' "$D/preset.conf" | head -n 1)
+  case "$saved" in ''|*[!0-9]*) ;; *) if [ "$saved" -ge 1 ] && [ "$saved" -le 100 ];then KEY_OPACITY="$saved";fi;;esac
+fi
+printf 'MODE=%s\nKEY_OPACITY=%s\n' "$MODE" "$KEY_OPACITY"
 SDK=$(getprop ro.build.version.sdk 2>/dev/null)
 case "$SDK" in ''|*[!0-9]*) SDK=unknown;; esac
 printf 'ANDROID_SDK=%s\n' "$SDK"
@@ -32,5 +37,13 @@ if [ -s "$D/zygisk/arm64-v8a.so" ]; then
 else
   echo 'NATIVE_BINARY=missing'
 fi
-echo 'RENDERER=NOT_IMPLEMENTED'
-echo 'ACTIVE_HOOK=NOT_VERIFIED'
+echo 'RENDERER=EXPERIMENTAL_JNI_NOT_DEVICE_VERIFIED'
+# Only read lines emitted by GyGlass; do not log keyboard text or other applications.
+EVENT=$(logcat -d -s GyGlass:I 2>/dev/null | sed -n 's/.*keyboard_map_status=\(-\{0,1\}[0-9][0-9]*\).*/\1/p' | tail -n 1)
+case "$EVENT" in
+  4) echo 'ACTIVE_HOOK=COLOR_MAP_CHANGED_IN_LOG';;
+  5) echo 'ACTIVE_HOOK=COLORS_ALREADY_MATCH_IN_LOG';;
+  -1) echo 'ACTIVE_HOOK=KEYBOARD_VIEW_NOT_FOUND_IN_LOG';;
+  1|2|3) echo "ACTIVE_HOOK=MAP_NOT_CHANGED_STATUS_$EVENT";;
+  *) echo 'ACTIVE_HOOK=NO_RENDER_EVENT_LOG';;
+esac
