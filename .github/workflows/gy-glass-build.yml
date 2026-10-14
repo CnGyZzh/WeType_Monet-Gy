@@ -1,92 +1,67 @@
-name: GyGlass Independent Hook Test Build
+name: GyGlass v30 Independent Hook
 on:
   push:
-    branches: [gy-glass-v29-test]
+    branches: [gy-glass-v30-test]
     paths:
-      - 'GyGlass_Standalone/app/**'
-      - 'GyGlass_Standalone/ksu/**'
-      - 'GyGlass_Standalone/*.gradle'
-      - 'GyGlass_Standalone/gradle.properties'
-      - 'GyGlass_Standalone/package.py'
+      - 'GyGlass_v30_patch.tar.xz.b64'
       - '.github/workflows/gy-glass-build.yml'
   workflow_dispatch:
+
 permissions:
-  contents: write
-concurrency:
-  group: gy-glass-v29-test
-  cancel-in-progress: true
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+      - name: Restore verified GyGlass sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 --decode GyGlass_v30_patch.tar.xz.b64 > /tmp/gyglass-v30.tar.xz
+          echo '7e19c7d3e68620dd3d7fd113e2753fe7a3e41594bb0aa2c757fd46255e364654  /tmp/gyglass-v30.tar.xz' | sha256sum -c -
+          tar -tJf /tmp/gyglass-v30.tar.xz
+          tar -xJf /tmp/gyglass-v30.tar.xz
+          test -s GyGlass_Standalone/app/src/main/java/com/gy/wetype/hook/MainHook.java
+          grep -q 'versionCode 300' GyGlass_Standalone/app/build.gradle
+          ! grep -q 'setBackgroundBlurRadius(20)' GyGlass_Standalone/app/src/main/java/com/gy/wetype/hook/MainHook.java
       - uses: actions/setup-java@v4
-        id: java
         with:
           distribution: temurin
           java-version: '17'
-      - name: Verify Android SDK 35
-        id: sdk35
-        shell: bash
+      - name: Install Android SDK 35
         run: |
-          set -e
-          echo "ANDROID_HOME=${ANDROID_HOME:-unset}"
-          if test ! -f "$ANDROID_HOME/platforms/android-35/android.jar"; then
-            echo 'Installing missing SDK 35 platform'
+          if [ ! -f "${ANDROID_HOME}/platforms/android-35/android.jar" ]; then
             yes | sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
           fi
-          test -f "$ANDROID_HOME/platforms/android-35/android.jar"
       - uses: gradle/actions/setup-gradle@v4
-        id: setupgradle
         with:
           gradle-version: '8.7'
-      - name: Compile independent Gy Hook
-        id: compile
+      - name: Compile GyGlass Hook
         working-directory: GyGlass_Standalone
         shell: bash
         run: |
           set -o pipefail
-          gradle --no-daemon :app:assembleDebug --stacktrace 2>&1 | tee /tmp/gyglass-gradle.log
-      - name: Package KernelSU ZIP
+          gradle --no-daemon :app:assembleDebug --stacktrace 2>&1 | tee /tmp/gyglass-gradle-v30.log
+      - name: Validate and pack KernelSU
         working-directory: GyGlass_Standalone
+        shell: bash
         run: |
+          set -euo pipefail
+          for f in ksu/*.sh; do bash -n "$f"; done
           cp app/build/outputs/apk/debug/app-debug.apk ksu/gyhook.apk
           python3 package.py
           unzip -t out/GyGlass_Standalone_v29.zip
-          sha256sum out/GyGlass_Standalone_v29.zip | tee out/SHA256SUMS.txt
+          mv out/GyGlass_Standalone_v29.zip out/GyGlass_v30_KernelSU.zip
+          sha256sum out/GyGlass_v30_KernelSU.zip > out/SHA256SUMS.txt
+          cat out/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: GyGlass-v29-test-KSU
+          name: GyGlass-v30-KernelSU-test
           path: |
-            GyGlass_Standalone/out/GyGlass_Standalone_v29.zip
+            GyGlass_Standalone/out/GyGlass_v30_KernelSU.zip
             GyGlass_Standalone/out/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 14
-      - name: Publish CI report to isolated test branch
-        if: always()
-        shell: bash
-        run: |
-          mkdir -p GyGlass_Standalone/out
-          {
-            echo 'GyGlass v29 CI report'
-            echo "run_id=$GITHUB_RUN_ID"
-            echo "setup_java=${{ steps.java.outcome }}"
-            echo "setup_sdk35=${{ steps.sdk35.outcome }}"
-            echo "setup_gradle=${{ steps.setupgradle.outcome }}"
-            echo "compile_outcome=${{ steps.compile.outcome }}"
-            echo "runner_job_status=${{ job.status }}"
-            echo "utc_date=$(date -u +%FT%TZ)"
-            echo '--- Gradle log (last 120 lines) ---'
-            if test -f /tmp/gyglass-gradle.log; then tail -n 120 /tmp/gyglass-gradle.log; else echo 'Gradle task not started'; fi
-          } > GyGlass_Standalone/out/build-report.txt
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -f GyGlass_Standalone/out/build-report.txt
-          if test -f GyGlass_Standalone/out/GyGlass_Standalone_v29.zip; then
-            git add -f GyGlass_Standalone/out/GyGlass_Standalone_v29.zip GyGlass_Standalone/out/SHA256SUMS.txt
-          fi
-          if ! git diff --cached --quiet; then
-            git commit -m 'ci: publish GyGlass build report and test ZIP [skip ci]'
-            git push origin HEAD:gy-glass-v29-test
-          fi
