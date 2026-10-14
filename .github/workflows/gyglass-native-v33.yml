@@ -1,0 +1,101 @@
+name: GyGlass v33 KernelSU Experimental
+on:
+  push:
+    branches: [gy-glass-v33-native-event-test]
+    paths:
+      - "GyGlassNative/**"
+      - ".github/workflows/gyglass-native-v33.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch upstream Zygisk SDK header
+        uses: actions/checkout@v4
+        with:
+          repository: topjohnwu/zygisk-module-sample
+          ref: master
+          path: .upstream/zygisk-module-sample
+          sparse-checkout: |
+            module/jni/zygisk.hpp
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Validate source, tests and WebUI
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(find GyGlassNative -iname '*.apk' -print -quit)"
+          mkdir -p GyGlassNative/native/include
+          cp .upstream/zygisk-module-sample/module/jni/zygisk.hpp GyGlassNative/native/include/zygisk.hpp
+          for file in GyGlassNative/module/*.sh; do bash -n "$file"; done
+          bash GyGlassNative/tests/diagnose_test.sh
+          for t in palette preset_bridge compatibility host_signature; do
+            g++ -std=c++17 -Wall -Wextra -Werror "GyGlassNative/tests/$t"_test.cpp -o "/tmp/gyglass_$t"_test
+            "/tmp/gyglass_$t"_test
+          done
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('GyGlassNative/module/webroot/index.html').read_text()
+          m=re.search(r'<script>(.*?)</script>',s,re.S)
+          assert m, "webui script missing"
+          Path('/tmp/gyglass-webui.js').write_text(m.group(1))
+          PY
+          node --check /tmp/gyglass-webui.js
+      - name: Install Android NDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses > /tmp/gyglass-licenses.log 2>&1 || true
+          "$SDKMANAGER" --install "ndk;27.2.12479018" "cmake;3.22.1"
+      - name: Compile native ARM64 binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmake -S GyGlassNative/native -B /tmp/gyglass-v33-build -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE="$ANDROID_HOME/ndk/27.2.12479018/build/cmake/android.toolchain.cmake" \
+            -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-30 \
+            -DCMAKE_BUILD_TYPE=Release
+          cmake --build /tmp/gyglass-v33-build --parallel 2
+          test -s /tmp/gyglass-v33-build/libgyglass.so
+          file /tmp/gyglass-v33-build/libgyglass.so
+          readelf -Ws /tmp/gyglass-v33-build/libgyglass.so > /tmp/gyglass-v33-symbols.txt
+          grep -q 'zygisk_module_entry' /tmp/gyglass-v33-symbols.txt
+          grep -q 'zygisk_companion_entry' /tmp/gyglass-v33-symbols.txt
+      - name: Package experimental KernelSU ZIP without APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          stage=/tmp/gyglass-v33-module
+          mkdir -p "$stage/zygisk" "$stage/webroot" GyGlassNative/out
+          cp GyGlassNative/module/module.prop "$stage/"
+          cp GyGlassNative/module/preset.sh GyGlassNative/module/diagnose.sh "$stage/"
+          cp GyGlassNative/module/webroot/index.html "$stage/webroot/"
+          cp /tmp/gyglass-v33-build/libgyglass.so "$stage/zygisk/arm64-v8a.so"
+          chmod 0755 "$stage/preset.sh" "$stage/diagnose.sh"
+          chmod 0644 "$stage/module.prop" "$stage/webroot/index.html" "$stage/zygisk/arm64-v8a.so"
+          (cd "$stage" && zip -q -r "$GITHUB_WORKSPACE/GyGlassNative/out/GyGlass_v33_Experimental_KSU.zip" .)
+          unzip -t GyGlassNative/out/GyGlass_v33_Experimental_KSU.zip
+          if unzip -Z1 GyGlassNative/out/GyGlass_v33_Experimental_KSU.zip | grep -Eiq '\.apk$'; then
+            echo "APK forbidden"; exit 12
+          fi
+          for name in module.prop zygisk/arm64-v8a.so webroot/index.html preset.sh diagnose.sh; do
+            unzip -Z1 GyGlassNative/out/GyGlass_v33_Experimental_KSU.zip | grep -Fxq "$name" || { echo "Missing $name"; exit 13; }
+          done
+          sha256sum GyGlassNative/out/GyGlass_v33_Experimental_KSU.zip | tee GyGlassNative/out/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GyGlass-v33-EXPERIMENTAL-KSU
+          path: |
+            GyGlassNative/out/GyGlass_v33_Experimental_KSU.zip
+            GyGlassNative/out/SHA256SUMS.txt
+          retention-days: 14
+          if-no-files-found: error
