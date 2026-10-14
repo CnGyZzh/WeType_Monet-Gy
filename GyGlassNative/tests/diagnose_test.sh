@@ -24,7 +24,8 @@ for pair in '4.0.0:57206' '4.0.0:57207' '5.0.0:90001'; do
  out=$(PATH="$tmp/bin:$PATH" WETYPE_TEST_VERSION="$version" WETYPE_TEST_CODE="$code" sh "$tmp/module/diagnose.sh")
  printf '%s\n' "$out" | grep -q "INPUT_VERSION=$version"
  printf '%s\n' "$out" | grep -q "BUILD_CODE=$code"
- printf '%s\n' "$out" | grep -q 'RENDERER=NOT_IMPLEMENTED'
+ printf '%s\n' "$out" | grep -q 'KEY_OPACITY=16'
+ printf '%s\n' "$out" | grep -q 'RENDERER=EXPERIMENTAL_JNI_NOT_DEVICE_VERIFIED'
  case "$code" in
  57206) printf '%s\n' "$out" | grep -q 'COMPAT=KNOWN_PACKAGE_NOT_RENDER_TESTED';;
  57207) printf '%s\n' "$out" | grep -q 'COMPAT=NEW_BUILD_NEEDS_SIGNATURE_CHECK';;
