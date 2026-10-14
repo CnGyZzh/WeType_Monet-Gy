@@ -1,7 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-  <application android:allowBackup="false" android:label="GyGlass" android:hasCode="true" android:usesCleartextTraffic="false">
-    <meta-data android:name="xposedmodule" android:value="true" />
-    <meta-data android:name="xposeddescription" android:value="微信输入法玻璃键盘渲染与动态配色" />
-    <meta-data android:name="xposedminversion" android:value="82" />
-  </application>
+    <application android:allowBackup="false" android:label="GyGlass" android:icon="@drawable/gyglass_icon"
+        android:roundIcon="@drawable/gyglass_icon" android:theme="@android:style/Theme.Material.Light.NoActionBar"
+        android:hasCode="true" android:usesCleartextTraffic="false">
+        <meta-data android:name="xposedmodule" android:value="true"/>
+        <meta-data android:name="xposeddescription" android:value="GyGlass 独立玻璃键盘；作用域仅微信输入法"/>
+        <meta-data android:name="xposedminversion" android:value="82"/>
+        <activity android:name="com.gy.wetype.hook.MainActivity" android:exported="true" android:label="GyGlass">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+    </application>
 </manifest>

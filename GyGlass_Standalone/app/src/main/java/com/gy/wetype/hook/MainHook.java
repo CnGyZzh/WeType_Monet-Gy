@@ -1,6 +1,10 @@
 package com.gy.wetype.hook;
 
 import android.app.Application;
+import android.content.BroadcastReceiver;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
@@ -42,6 +46,10 @@ public final class MainHook implements IXposedHookLoadPackage {
     private volatile Map<Integer,Integer> transparentResources=new HashMap<>();
     private volatile int toolbarId=-1;
     private volatile boolean lastIndependent=false;
+    private volatile boolean glassEnabled=true, hookReady=false;
+    private volatile int keyOpacity=50;
+    private static final String CONTROL="com.gy.gyglass.lsp.CONTROL";
+    private static final String REPLY="com.gy.gyglass.lsp.REPLY";
 
     @Override public void handleLoadPackage(XC_LoadPackage.LoadPackageParam param) {
         if (!TARGET.equals(param.packageName)) return;
@@ -50,6 +58,7 @@ public final class MainHook implements IXposedHookLoadPackage {
                 Context ctx = (Context) hook.args[0];
                 if (!TARGET.equals(ctx.getPackageName())) return;
                 appContext = ctx;
+                registerControls(ctx);
                 if (installed.compareAndSet(false, true)) install(ctx.getClassLoader());
             }
         });
@@ -89,7 +98,7 @@ public final class MainHook implements IXposedHookLoadPackage {
 
             XposedBridge.hookAllMethods(Resources.Theme.class,"resolveAttribute",new XC_MethodHook() {
                 @Override protected void afterHookedMethod(MethodHookParam hook) {
-                    if (!Boolean.TRUE.equals(hook.getResult())) return;
+                    if (!glassEnabled || !Boolean.TRUE.equals(hook.getResult())) return;
                     if (!(hook.args[0] instanceof Integer) || !(hook.args[1] instanceof TypedValue)) return;
                     Integer role = targetAttributes.get((Integer)hook.args[0]);
                     if (role == null) return;
@@ -108,6 +117,7 @@ public final class MainHook implements IXposedHookLoadPackage {
             addKeyboardBackgroundHooks();
             addToolbarHook();
             addWindowHook(loader);
+            hookReady=true;
             writeStatus("active");
             XposedBridge.log(TAG+"HOOK_ACTIVE attributes="+roles.size()+" transparentColors="+clear.size());
         } catch(Throwable e) { XposedBridge.log(TAG+"HOOK_FAILED "+e); }
@@ -116,7 +126,7 @@ public final class MainHook implements IXposedHookLoadPackage {
     private void addWindowHook(ClassLoader loader) {
         XC_MethodHook apply = new XC_MethodHook() {
             @Override protected void afterHookedMethod(MethodHookParam hook) {
-                if (!(hook.thisObject instanceof InputMethodService)) return;
+                if (!glassEnabled || !(hook.thisObject instanceof InputMethodService)) return;
                 try {
                     readAppearance();
                     InputMethodService ime=(InputMethodService)hook.thisObject;
@@ -150,7 +160,7 @@ public final class MainHook implements IXposedHookLoadPackage {
         if(transparentResources.isEmpty())return;
         XposedBridge.hookAllMethods(Resources.class,"getColor",new XC_MethodHook(){
             @Override protected void afterHookedMethod(MethodHookParam p){
-                if(p.args.length>0 && p.args[0] instanceof Integer &&
+                if(glassEnabled && p.args.length>0 && p.args[0] instanceof Integer &&
                     transparentResources.containsKey((Integer)p.args[0]))
                     p.setResult(Color.TRANSPARENT);
             }
@@ -167,13 +177,42 @@ public final class MainHook implements IXposedHookLoadPackage {
         if(toolbarId<0)return;
         XC_MethodHook adjust=new XC_MethodHook(){
             @Override protected void beforeHookedMethod(MethodHookParam p){
-                if(!(p.thisObject instanceof View) || ((View)p.thisObject).getId()!=toolbarId ||
+                if(!glassEnabled || !(p.thisObject instanceof View) || ((View)p.thisObject).getId()!=toolbarId ||
                    p.args.length<1 || !(p.args[0] instanceof Drawable))return;
                 Drawable d=((Drawable)p.args[0]).mutate(); d.setAlpha(72); p.args[0]=d;
             }
         };
         XposedBridge.hookAllMethods(View.class,"setBackground",adjust);
         XposedBridge.hookAllMethods(View.class,"setBackgroundDrawable",adjust);
+    }
+    private void registerControls(Context ctx) {
+        try {
+            IntentFilter f=new IntentFilter(CONTROL);
+            ctx.registerReceiver(new BroadcastReceiver(){
+                @Override public void onReceive(Context c,Intent intent) {
+                    if(!CONTROL.equals(intent.getAction()))return;
+                    String cmd=intent.getStringExtra("cmd");
+                    if("apply".equals(cmd)) {
+                        try {
+                            ctx.getSharedPreferences("gyglass_custom",Context.MODE_PRIVATE).edit()
+                                .putBoolean("enabled",intent.getBooleanExtra("enabled",true))
+                                .putBoolean("independent",intent.getBooleanExtra("independent",false))
+                                .putInt("opacity",Math.max(0,Math.min(100,intent.getIntExtra("opacity",50))))
+                                .apply();
+                            readAppearance();
+                            writeStatus("config_applied");
+                        } catch(Throwable t){XposedBridge.log(TAG+"CONFIG_FAILED "+t);}
+                    }
+                    Intent reply=new Intent(REPLY);
+                    reply.setPackage("com.gy.gyglass.lsp");
+                    reply.putExtra("ready",hookReady);
+                    reply.putExtra("applied","apply".equals(cmd));
+                    reply.putExtra("process",android.os.Process.myPid());
+                    try{ctx.sendBroadcast(reply);}catch(Throwable ignored){}
+                }
+            },f,Context.RECEIVER_EXPORTED);
+            XposedBridge.log(TAG+"PROCESS_ATTACHED / receiver registered");
+        }catch(Throwable t){XposedBridge.log(TAG+"CONTROL_RECEIVER_FAILED "+t);}
     }
     private void writeStatus(String event){
         Context ctx=appContext;if(ctx==null)return;
@@ -189,13 +228,17 @@ public final class MainHook implements IXposedHookLoadPackage {
     private void readAppearance() {
         Context ctx=appContext;
         if(ctx==null) return;
-        boolean independent = readPreset(ctx);
+        SharedPreferences sp=ctx.getSharedPreferences("gyglass_custom",Context.MODE_PRIVATE);
+        glassEnabled=sp.getBoolean("enabled",true);
+        boolean independent=sp.getBoolean("independent",readPreset(ctx));
+        keyOpacity=Math.max(0,Math.min(100,sp.getInt("opacity",50)));
         lastIndependent=independent;
         boolean dark=(ctx.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)==Configuration.UI_MODE_NIGHT_YES;
         int neutral=monet(ctx,dark?"system_neutral1_700":"system_neutral1_100",dark?0xFF474250:0xFFCCC8D9);
         panelColor=alpha(neutral,dark?0x20:0x28);
-        normalFill=alpha(neutral,independent?(dark?0x68:0x58):0);
-        functionFill=alpha(neutral,independent?0x45:0x25);
+        int adjustable=(int)Math.round(keyOpacity*2.55);
+        normalFill=alpha(neutral,independent?adjustable:0);
+        functionFill=alpha(neutral,independent?Math.min(255,adjustable+12):Math.min(255,adjustable/2));
         borderColor=independent?0x25FFFFFF:0x08FFFFFF;
     }
 

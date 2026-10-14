@@ -1,111 +1,79 @@
-name: GyGlass v30 Test Build
+name: GyGlass LSPosed v35 Build
 on:
   push:
-    branches: [gy-glass-v29-test]
-    paths:
-      - 'GyGlass_Standalone/app/**'
-      - 'GyGlass_Standalone/ksu/**'
-      - 'GyGlass_Standalone/*.gradle'
-      - 'GyGlass_Standalone/gradle.properties'
-      - 'GyGlass_Standalone/package.py'
-      - '.github/workflows/gy-glass-build.yml'
+    branches: [gyglass-lsp-v35-fix]
+    paths: ['GyGlass_Standalone/app/**', '.github/workflows/gy-glass-build.yml']
   workflow_dispatch:
 permissions:
   contents: write
 concurrency:
-  group: gy-glass-v29-test
-  cancel-in-progress: true
+  group: gyglass-lsp-v35-fix
+  cancel-in-progress: false
 jobs:
   build:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
-      - name: Validate installer scripts and WebUI
-        shell: bash
-        run: |
-          set -euo pipefail
-          for f in GyGlass_Standalone/ksu/*.sh; do
-            bash -n "$f"
-            sh -n "$f"
-          done
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          content = Path("GyGlass_Standalone/ksu/webroot/index.html").read_text()
-          match = re.search(r"<script>(.*?)</script>", content, re.S)
-          assert match, "WebUI JavaScript missing"
-          Path("/tmp/gyglass-webui.js").write_text(match.group(1))
-          PY
-          node --check /tmp/gyglass-webui.js
       - uses: actions/setup-java@v4
-        id: java
         with:
           distribution: temurin
           java-version: '17'
-      - name: Verify Android SDK 35
-        id: sdk35
-        shell: bash
+      - name: Ensure SDK 35
         run: |
-          set -e
-          echo "ANDROID_HOME=${ANDROID_HOME:-unset}"
           if test ! -f "$ANDROID_HOME/platforms/android-35/android.jar"; then
-            echo 'Installing missing SDK 35 platform'
             yes | sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
           fi
-          test -f "$ANDROID_HOME/platforms/android-35/android.jar"
       - uses: gradle/actions/setup-gradle@v4
-        id: setupgradle
         with:
           gradle-version: '8.7'
-      - name: Compile independent Gy Hook
-        id: compile
+      - name: Build installable APK
         working-directory: GyGlass_Standalone
         shell: bash
         run: |
           set -o pipefail
-          gradle --no-daemon :app:assembleDebug --stacktrace 2>&1 | tee /tmp/gyglass-gradle.log
-      - name: Package KernelSU ZIP
+          gradle --no-daemon :app:assembleDebug --stacktrace 2>&1 | tee /tmp/gyglass-build.log
+      - name: Verify launcher and Hook assets
         working-directory: GyGlass_Standalone
         run: |
-          cp app/build/outputs/apk/debug/app-debug.apk ksu/gyhook.apk
-          python3 package.py
-          unzip -t out/GyGlass_v30_KSU.zip
-          sha256sum out/GyGlass_v30_KSU.zip | tee out/SHA256SUMS.txt
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          unzip -p "$APK" assets/xposed_init | grep -q '^com.gy.wetype.hook.MainHook'
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" > /tmp/badging.txt
+          cat /tmp/badging.txt
+          grep -q 'launchable-activity:' /tmp/badging.txt
+          grep -q "package: name='com.gy.gyglass.lsp'" /tmp/badging.txt
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$APK"
       - uses: actions/upload-artifact@v4
         with:
-          name: GyGlass-v30-test-KSU
-          path: |
-            GyGlass_Standalone/out/GyGlass_v30_KSU.zip
-            GyGlass_Standalone/out/SHA256SUMS.txt
+          name: GyGlass-LSPosed-v35-Beta-APK
+          path: GyGlass_Standalone/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
-      - name: Publish CI report to isolated test branch
+      - name: Publish APK and report on test branch
         if: always()
         shell: bash
         run: |
           mkdir -p GyGlass_Standalone/out
           {
-            echo 'GyGlass v30 CI report'
+            echo 'GyGlass LSPosed v35 build'
             echo "run_id=$GITHUB_RUN_ID"
-            echo "setup_java=${{ steps.java.outcome }}"
-            echo "setup_sdk35=${{ steps.sdk35.outcome }}"
-            echo "setup_gradle=${{ steps.setupgradle.outcome }}"
-            echo "compile_outcome=${{ steps.compile.outcome }}"
-            echo "runner_job_status=${{ job.status }}"
-            echo "utc_date=$(date -u +%FT%TZ)"
-            echo '--- Gradle log (last 120 lines) ---'
-            if test -f /tmp/gyglass-gradle.log; then tail -n 120 /tmp/gyglass-gradle.log; else echo 'Gradle task not started'; fi
-          } > GyGlass_Standalone/out/build-report.txt
+            echo "status=${{ job.status }}"
+            echo '--- Last build lines ---'
+            tail -n 100 /tmp/gyglass-build.log 2>/dev/null || true
+            echo '--- APK manifest diagnostics ---'
+            cat /tmp/badging.txt 2>/dev/null || true
+          } > GyGlass_Standalone/out/v35-build-report.txt
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -f GyGlass_Standalone/out/build-report.txt
-          if test -f GyGlass_Standalone/out/GyGlass_v30_KSU.zip; then
-            git add -f GyGlass_Standalone/out/GyGlass_v30_KSU.zip GyGlass_Standalone/out/SHA256SUMS.txt
+          git add -f GyGlass_Standalone/out/v35-build-report.txt
+          if test -f GyGlass_Standalone/app/build/outputs/apk/debug/app-debug.apk; then
+            cp GyGlass_Standalone/app/build/outputs/apk/debug/app-debug.apk GyGlass_Standalone/out/GyGlass-LSPosed-v35-Beta.apk
+            git add -f GyGlass_Standalone/out/GyGlass-LSPosed-v35-Beta.apk
           fi
           if ! git diff --cached --quiet; then
-            git commit -m 'ci: publish GyGlass v30 build report and test ZIP [skip ci]'
-            git fetch origin gy-glass-v29-test
-            git rebase origin/gy-glass-v29-test
-            git push origin HEAD:gy-glass-v29-test
+            git commit -m 'ci: publish GyGlass v35 APK and checks [skip ci]'
+            git fetch origin gyglass-lsp-v35-fix
+            git rebase origin/gyglass-lsp-v35-fix
+            git push origin HEAD:gyglass-lsp-v35-fix
           fi
