@@ -1,6 +1,6 @@
 #!/system/bin/sh
 D=${0%/*}
-PKG=com.gy.wetype.hook
+PKG=com.gy.glass.engine
 APK="$D/gyhook.apk"
 HASHFILE="$D/.installed-apk.sha256"
 [ -s "$APK" ] || { echo 'HOOK_ERROR=missing APK'; exit 20; }
@@ -18,5 +18,5 @@ if [ "$RC" -eq 0 ] && printf '%s' "$OUT" | grep -q Success; then
   exit 0
 fi
 echo "HOOK_ERROR=$OUT"
-echo 'HOOK_NOTE=previous Hook package was not deleted, user data untouched'
+echo 'HOOK_NOTE=Keep this Hook component enabled in LSPosed
 exit 21
