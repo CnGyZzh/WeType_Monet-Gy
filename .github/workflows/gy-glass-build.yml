@@ -4,6 +4,7 @@ on:
     branches: [gy-glass-v30-test]
     paths:
       - 'GyGlass_v30_patch.tar.xz.b64'
+      - 'GyGlass_v30_1_install_hook.sh'
       - '.github/workflows/gy-glass-build.yml'
   workflow_dispatch:
 
@@ -31,6 +32,29 @@ jobs:
           test -s GyGlass_Standalone/app/src/main/java/com/gy/wetype/hook/MainHook.java
           grep -q 'versionCode 300' GyGlass_Standalone/app/build.gradle
           ! grep -q 'setBackgroundBlurRadius(20)' GyGlass_Standalone/app/src/main/java/com/gy/wetype/hook/MainHook.java
+      - name: Apply GyGlass v30.1 metadata and migration patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp GyGlass_v30_1_install_hook.sh GyGlass_Standalone/ksu/install_hook.sh
+          python3 - <<'PY'
+          from pathlib import Path
+          root = Path("GyGlass_Standalone")
+          def edit(path, old, new):
+              p = root / path
+              v = p.read_text(encoding="utf-8")
+              assert old in v, (path, old)
+              p.write_text(v.replace(old, new), encoding="utf-8")
+          edit("app/src/main/AndroidManifest.xml", 'android:label="Gy 玻璃键盘 · Hook"', 'android:label="GyGlass Hook"')
+          edit("app/build.gradle", 'versionCode 300', 'versionCode 301')
+          edit("app/build.gradle", "'30.0-test'", "'30.1-test'")
+          edit("ksu/module.prop", "version=v30.0-test", "version=v30.1-test")
+          edit("ksu/module.prop", "versionCode=300", "versionCode=301")
+          edit("ksu/customize.sh", "gyhook.apk", "GyGlassHook.apk")
+          edit("package.py", "ksu/gyhook.apk", "ksu/GyGlassHook.apk")
+          PY
+          bash -n GyGlass_Standalone/ksu/install_hook.sh
+          grep -q 'android:label="GyGlass Hook"' GyGlass_Standalone/app/src/main/AndroidManifest.xml
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -55,7 +79,7 @@ jobs:
         run: |
           set -euo pipefail
           for f in ksu/*.sh; do bash -n "$f"; done
-          cp app/build/outputs/apk/debug/app-debug.apk ksu/gyhook.apk
+          cp app/build/outputs/apk/debug/app-debug.apk ksu/GyGlassHook.apk
           python3 package.py
           unzip -t out/GyGlass_Standalone_v29.zip
           mv out/GyGlass_Standalone_v29.zip out/GyGlass_v30_KernelSU.zip
