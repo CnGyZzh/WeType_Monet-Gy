@@ -3,11 +3,15 @@ on:
   push:
     branches: [gy-glass-v29-test]
     paths:
-      - 'GyGlass_Standalone/**'
+      - 'GyGlass_Standalone/app/**'
+      - 'GyGlass_Standalone/ksu/**'
+      - 'GyGlass_Standalone/*.gradle'
+      - 'GyGlass_Standalone/gradle.properties'
+      - 'GyGlass_Standalone/package.py'
       - '.github/workflows/gy-glass-build.yml'
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -19,26 +23,35 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
-      - name: Install SDK 35
+      - name: Install Android SDK 35
         run: sdkmanager --install 'platforms;android-35' 'build-tools;35.0.0'
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'
-      - name: Compile Gy independent Hook
+      - name: Compile independent Gy Hook
         working-directory: GyGlass_Standalone
         run: gradle --no-daemon :app:assembleDebug --stacktrace
-      - name: Package KernelSU module
+      - name: Package KernelSU ZIP
         working-directory: GyGlass_Standalone
         run: |
           cp app/build/outputs/apk/debug/app-debug.apk ksu/gyhook.apk
           python3 package.py
           unzip -t out/GyGlass_Standalone_v29.zip
-          sha256sum out/GyGlass_Standalone_v29.zip
+          sha256sum out/GyGlass_Standalone_v29.zip | tee out/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
           name: GyGlass-v29-test-KSU
           path: |
             GyGlass_Standalone/out/GyGlass_Standalone_v29.zip
-            GyGlass_Standalone/app/build/outputs/apk/debug/app-debug.apk
+            GyGlass_Standalone/out/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 14
+      - name: Publish test ZIP on test branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f GyGlass_Standalone/out/GyGlass_Standalone_v29.zip GyGlass_Standalone/out/SHA256SUMS.txt
+          if ! git diff --cached --quiet; then
+            git commit -m 'ci: publish compiled GyGlass test ZIP [skip ci]'
+            git push origin HEAD:gy-glass-v29-test
+          fi
