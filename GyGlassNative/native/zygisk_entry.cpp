@@ -19,13 +19,14 @@ constexpr unsigned char kQueryPreset = 'P';
 // It exposes only the preset mode and never reads chats/clipboard/input text.
 void companion_handler(int socket) {
  unsigned char query=0;
- const ssize_t received=recv(socket,&query,sizeof(query),0);
- if(received==1 && query==kQueryPreset) {
+ // Blocking receive: no timer, no polling, no access to keyboard text.
+ while(recv(socket,&query,sizeof(query),0)==1 && query==kQueryPreset) {
   const int root=open(kModuleDirectory,O_RDONLY|O_DIRECTORY|O_CLOEXEC|O_NOFOLLOW);
   const gyglass::Mode mode=gyglass::read_preset_at(root);
   if(root>=0) close(root);
   const gyglass::PresetReply reply=gyglass::make_reply(mode);
-  (void)send(socket,&reply,sizeof(reply),MSG_NOSIGNAL);
+  if(send(socket,&reply,sizeof(reply),MSG_NOSIGNAL)!=static_cast<ssize_t>(sizeof(reply)))
+   break;
  }
  close(socket);
 }
@@ -54,11 +55,20 @@ class GyGlassModule final : public zygisk::ModuleBase {
   const int module_fd=api_->getModuleDir();
   mode_=gyglass::read_preset_at(module_fd);
   if(module_fd>=0) close(module_fd);
+  // Zygisk API calls are only valid before/within specialization.
+  // Preserve the socket fd so future keyboard-show callbacks can refresh the
+  // preset through Root Companion without invoking Zygisk API again.
+  companion_fd_=api_->connectCompanion();
+  if(companion_fd_>=0 && !api_->exemptFd(companion_fd_)) {
+   close(companion_fd_);
+   companion_fd_=-1;
+  }
  }
  void postAppSpecialize(const zygisk::AppSpecializeArgs*) override {
   if(!active_) return;
   // Until an actual IME-scoped ART renderer is installed, report only
   // native injection and preset discovery, not hook/render success.
+  (void)refresh_preset();
   const gyglass::MonetSource monet=gyglass::query_monet(env_);
   if(monet.available){
    // The palette is sampled once for diagnostic readiness.
@@ -76,10 +86,26 @@ class GyGlassModule final : public zygisk::ModuleBase {
   }
  }
  private:
+ bool refresh_preset() noexcept {
+  if(companion_fd_<0) return false;
+  struct timeval limit{};
+  limit.tv_sec=0;
+  limit.tv_usec=200000;
+  (void)setsockopt(companion_fd_,SOL_SOCKET,SO_RCVTIMEO,&limit,sizeof(limit));
+  (void)setsockopt(companion_fd_,SOL_SOCKET,SO_SNDTIMEO,&limit,sizeof(limit));
+  const unsigned char q=kQueryPreset;
+  if(send(companion_fd_,&q,1,MSG_NOSIGNAL)!=1) return false;
+  gyglass::PresetReply reply{};
+  if(recv(companion_fd_,&reply,sizeof(reply),MSG_WAITALL)!=static_cast<ssize_t>(sizeof(reply)) ||
+     !gyglass::valid_reply(reply)) return false;
+  mode_=static_cast<gyglass::Mode>(reply.mode);
+  return true;
+ }
  zygisk::Api* api_=nullptr;
  JNIEnv* env_=nullptr;
  bool active_=false;
  gyglass::Mode mode_=gyglass::Mode::Seamless;
+ int companion_fd_=-1;
 };
 }
 REGISTER_ZYGISK_MODULE(GyGlassModule)
