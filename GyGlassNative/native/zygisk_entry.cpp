@@ -42,7 +42,7 @@ void companion_handler(int fd) {
     if(out>=0) {
      char data[120]{};
      const int n=std::snprintf(data,sizeof(data),
-       "NATIVE_PRE=ok\\nNATIVE_PID=%ld\\nNATIVE_QUEUE_REGISTERED=%u\\n",
+       "NATIVE_PRE=ok\nNATIVE_PID=%ld\nNATIVE_QUEUE_REGISTERED=%u\n",
        static_cast<long>(proof.pid),static_cast<unsigned>(proof.registered));
      if(n>0 && static_cast<size_t>(n)<sizeof(data)) (void)write(out,data,static_cast<size_t>(n));
      close(out);
@@ -55,7 +55,7 @@ void companion_handler(int fd) {
    if(dir>=0) {
     int state=openat(dir,"companion_state.txt",O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC|O_NOFOLLOW,0600);
     if(state>=0) {
-     static constexpr char marker[]="COMPANION_REQUEST=ok\\n";
+     static constexpr char marker[]="COMPANION_REQUEST=ok\n";
      (void)write(state,marker,sizeof(marker)-1);
      close(state);
     }
