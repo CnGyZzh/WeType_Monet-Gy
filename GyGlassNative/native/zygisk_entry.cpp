@@ -4,6 +4,8 @@
 #include <sys/time.h>
 #include <time.h>
 #include <fcntl.h>
+#include <sys/stat.h>
+#include <cstdio>
 #include <unistd.h>
 #include <android/log.h>
 #include <cstdint>
@@ -27,7 +29,17 @@ void companion_handler(int fd) {
  while(recv(fd,&q,1,0)==1 && q==kQuery) {
   int dir=open(kFolder,O_RDONLY|O_DIRECTORY|O_CLOEXEC|O_NOFOLLOW);
   auto config=gyglass::read_preset_at(dir);
-  if(dir>=0)close(dir);
+  // Root Companion records a minimal injection marker only on a real request.
+  // No keystrokes, screen contents, or clipboard data are logged.
+  if(dir>=0) {
+   int state=openat(dir,"companion_state.txt",O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC|O_NOFOLLOW,0600);
+   if(state>=0) {
+    static constexpr char marker[]="COMPANION_REQUEST=ok\n";
+    (void)write(state,marker,sizeof(marker)-1);
+    close(state);
+   }
+   close(dir);
+  }
   auto reply=gyglass::make_reply(config);
   if(send(fd,&reply,sizeof(reply),MSG_NOSIGNAL)!=static_cast<ssize_t>(sizeof(reply)))break;
  }
@@ -47,6 +59,8 @@ class GyGlassModule final:public zygisk::ModuleBase {
    env_->ReleaseStringUTFChars(args->nice_name,name);
   }
   if(!active_){api_->setOption(zygisk::Option::DLCLOSE_MODULE_LIBRARY);return;}
+  __android_log_print(ANDROID_LOG_INFO,"GyGlass",
+   "GY_EVT=PRE_APP value=ok pid=%ld",static_cast<long>(getpid()));
   int dir=api_->getModuleDir();
   config_=gyglass::read_preset_at(dir);
   if(dir>=0)close(dir);
@@ -69,6 +83,8 @@ class GyGlassModule final:public zygisk::ModuleBase {
  }
  void postAppSpecialize(const zygisk::AppSpecializeArgs*) override {
   if(active_) {
+   __android_log_print(ANDROID_LOG_INFO,"GyGlass",
+    "GY_EVT=POST_APP value=ok pid=%ld",static_cast<long>(getpid()));
    __android_log_print(ANDROID_LOG_INFO,"GyGlass",
     "native_entry=loaded poll_hook=%d renderer=experimental",enabled_?1:0);
    __android_log_print(ANDROID_LOG_INFO,"GyGlass",
