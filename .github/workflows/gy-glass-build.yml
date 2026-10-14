@@ -88,5 +88,7 @@ jobs:
           fi
           if ! git diff --cached --quiet; then
             git commit -m 'ci: publish GyGlass v30 build report and test ZIP [skip ci]'
+            git fetch origin gy-glass-v29-test
+            git rebase origin/gy-glass-v29-test
             git push origin HEAD:gy-glass-v29-test
           fi
