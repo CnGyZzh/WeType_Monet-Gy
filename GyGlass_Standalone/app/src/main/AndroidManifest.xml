@@ -1,0 +1,7 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application android:allowBackup="false" android:label="Gy 玻璃键盘 Hook" android:hasCode="true" android:usesCleartextTraffic="false">
+    <meta-data android:name="xposedmodule" android:value="true" />
+    <meta-data android:name="xposeddescription" android:value="Gy 微信输入法玻璃键盘；无桌面入口与激活码" />
+    <meta-data android:name="xposedminversion" android:value="82" />
+  </application>
+</manifest>
