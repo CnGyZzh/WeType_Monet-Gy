@@ -8,7 +8,11 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: gyglass-v30-test
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -65,3 +69,24 @@ jobs:
             GyGlass_Standalone/out/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish build report on test branch
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p GyGlass_Standalone/out
+          {
+            echo "run_id=$GITHUB_RUN_ID"
+            echo "status=${{ job.status }}"
+            echo "utc=$(date -u +%FT%TZ)"
+            test -f GyGlass_Standalone/out/SHA256SUMS.txt && cat GyGlass_Standalone/out/SHA256SUMS.txt || true
+            echo '--- Compilation log ---'
+            if test -f /tmp/gyglass-gradle-v30.log; then tail -n 100 /tmp/gyglass-gradle-v30.log; else echo 'Compilation not started'; fi
+          } > GyGlass_Standalone/out/v30-build-report.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f GyGlass_Standalone/out/v30-build-report.txt
+          if ! git diff --cached --quiet; then
+            git commit -m 'ci: record GyGlass v30 build result [skip ci]'
+            git push origin HEAD:gy-glass-v30-test
+          fi
