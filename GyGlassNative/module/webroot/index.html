@@ -35,7 +35,7 @@ function mark(mode){buttons.forEach(b=>b.classList.toggle('on',b.id===mode));}
 function fields(text){const kv={};for(const line of text.split('\n')){const ix=line.indexOf('=');if(ix>0)kv[line.slice(0,ix)]=line.slice(ix+1).trim();}return kv;}
 function compatibilityMessage(c) {
  switch(c){
-  case 'KNOWN_BUILD_NOT_RENDER_TESTED':return '已识别版本，绘制兼容性尚待测试';
+  case 'KNOWN_PACKAGE_NOT_RENDER_TESTED':return '安装包版本已识别，玻璃渲染兼容性尚待验证';
   case 'NEW_BUILD_NEEDS_SIGNATURE_CHECK':return '检测到新版本，需重新核验绘制入口';
   case 'UNRECOGNIZED_HOST_VERSION':return '未知版本，禁止假定兼容';
   case 'INPUT_METHOD_NOT_INSTALLED':return '未检测到微信输入法';
@@ -49,7 +49,7 @@ async function refresh(){
  if(!['seamless','independent'].includes(kv.MODE))throw Error('预设状态无效');
  mark(kv.MODE);
  el.textContent='当前预设：'+(kv.MODE==='independent'?'独立玻璃键帽':'一体式');
- info.textContent='微信输入法 '+(kv.INPUT_VERSION||'未知')+' · Android API '+(kv.ANDROID_SDK||'未知')+'\n'+
+ info.textContent='微信输入法 '+(kv.INPUT_VERSION||'未知')+'（构建 '+(kv.BUILD_CODE||'未知')+'） · Android API '+(kv.ANDROID_SDK||'未知')+'\n'+
   compatibilityMessage(kv.COMPAT)+'\n原生渲染：尚未接入；选择预设仅保存配置。';
 }
 async function update(value) {
