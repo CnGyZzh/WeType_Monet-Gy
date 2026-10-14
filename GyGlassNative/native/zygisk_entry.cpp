@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <cstdio>
+#include <ctime>
 #include <unistd.h>
 #include <android/log.h>
 #include <cstdint>
@@ -18,6 +19,7 @@ namespace {
 constexpr char kTarget[]="com.tencent.wetype";
 constexpr char kFolder[]="/data/adb/modules/gyglass";
 constexpr unsigned char kQuery='P';
+constexpr unsigned char kEvent='E';
 using PollOnce=void(*)(JNIEnv*,jobject,jlong,jint);
 PollOnce original=nullptr;
 class GyGlassModule;
@@ -25,26 +27,47 @@ GyGlassModule* active_instance=nullptr;
 void replacement(JNIEnv*,jobject,jlong,jint);
 
 void companion_handler(int fd) {
+ // Zygisk Root Companion is attached only to this module's target processes.
+ // Store stage codes + PID, never captured user input.
  unsigned char q=0;
- while(recv(fd,&q,1,0)==1 && q==kQuery) {
-  int dir=open(kFolder,O_RDONLY|O_DIRECTORY|O_CLOEXEC|O_NOFOLLOW);
-  auto config=gyglass::read_preset_at(dir);
-  // Root Companion records a minimal injection marker only on a real request.
-  // No keystrokes, screen contents, or clipboard data are logged.
-  if(dir>=0) {
-   int state=openat(dir,"companion_state.txt",O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC|O_NOFOLLOW,0600);
-   if(state>=0) {
-    static constexpr char marker[]="COMPANION_REQUEST=ok\n";
-    (void)write(state,marker,sizeof(marker)-1);
-    close(state);
+ while(recv(fd,&q,1,0)==1) {
+  if(q==kQuery){
+   const int dir=open(kFolder,O_RDONLY|O_DIRECTORY|O_CLOEXEC|O_NOFOLLOW);
+   auto config=gyglass::read_preset_at(dir);
+   if(dir>=0)close(dir);
+   auto reply=gyglass::make_reply(config);
+   if(send(fd,&reply,sizeof(reply),MSG_NOSIGNAL)!=static_cast<ssize_t>(sizeof(reply)))break;
+  } else if(q==kEvent){
+   unsigned char payload[5]{};
+   if(recv(fd,payload,sizeof(payload),MSG_WAITALL)!=static_cast<ssize_t>(sizeof(payload)))break;
+   const char event=static_cast<char>(payload[0]);
+   if(!std::strchr("IRFTUKMX",event))continue;
+   int32_t pid=0;
+   std::memcpy(&pid,payload+1,sizeof(pid));
+   if(pid<=0)continue;
+   const int dir=open(kFolder,O_RDONLY|O_DIRECTORY|O_CLOEXEC|O_NOFOLLOW);
+   if(dir<0)continue;
+   int logfd=openat(dir,"hook_events.txt",O_WRONLY|O_CREAT|O_APPEND|O_CLOEXEC|O_NOFOLLOW,0600);
+   if(logfd>=0) {
+    struct stat st{};
+    if(fstat(logfd,&st)==0 && st.st_size>65536) {
+     close(logfd);
+     logfd=openat(dir,"hook_events.txt",O_WRONLY|O_TRUNC|O_CLOEXEC|O_NOFOLLOW,0600);
+    }
+    if(logfd>=0) {
+     char line[80]{};
+     const int len=std::snprintf(line,sizeof(line),"epoch=%lld pid=%ld stage=%c\\n",
+       static_cast<long long>(time(nullptr)),static_cast<long>(pid),event);
+     if(len>0 && len<static_cast<int>(sizeof(line))) (void)write(logfd,line,static_cast<size_t>(len));
+     close(logfd);
+    }
    }
    close(dir);
-  }
-  auto reply=gyglass::make_reply(config);
-  if(send(fd,&reply,sizeof(reply),MSG_NOSIGNAL)!=static_cast<ssize_t>(sizeof(reply)))break;
+  } else break;
  }
  close(fd);
 }
+
 class GyGlassModule final:public zygisk::ModuleBase {
  public:
  void onLoad(zygisk::Api* api,JNIEnv* env) override {
@@ -70,6 +93,7 @@ class GyGlassModule final:public zygisk::ModuleBase {
   }
   __android_log_print(ANDROID_LOG_INFO,"GyGlass",
    "GY_EVT=COMPANION value=%s",companion_fd_>=0?"ok":"fail");
+  emit_event('I');
   JNINativeMethod m[]={{const_cast<char*>("nativePollOnce"),
                         const_cast<char*>("(JI)V"),
                         reinterpret_cast<void*>(replacement)}};
@@ -80,11 +104,13 @@ class GyGlassModule final:public zygisk::ModuleBase {
    if(env_->ExceptionCheck())env_->ExceptionClear();
    __android_log_print(ANDROID_LOG_WARN,"GyGlass","poll_hook=not_available");
   }
+  emit_event(enabled_?'R':'F');
  }
  void postAppSpecialize(const zygisk::AppSpecializeArgs*) override {
   if(active_) {
    __android_log_print(ANDROID_LOG_INFO,"GyGlass",
     "GY_EVT=POST_APP value=ok pid=%ld",static_cast<long>(getpid()));
+   emit_event('T');
    __android_log_print(ANDROID_LOG_INFO,"GyGlass",
     "native_entry=loaded poll_hook=%d renderer=experimental",enabled_?1:0);
    __android_log_print(ANDROID_LOG_INFO,"GyGlass",
@@ -100,6 +126,7 @@ class GyGlassModule final:public zygisk::ModuleBase {
   busy_=true;next_ns_=now+1500000000LL;
   if(!main_thread_logged_) {
    main_thread_logged_=true;
+   emit_event('U');
    __android_log_print(ANDROID_LOG_INFO,"GyGlass","GY_EVT=MAIN_THREAD value=ok");
   }
   // Root IPC is bounded but never run on every native poll; cache the preset.
@@ -117,12 +144,15 @@ class GyGlassModule final:public zygisk::ModuleBase {
    if(visible){
     if(!keyboard_logged_) {
      keyboard_logged_=true;
+     emit_event('K');
      __android_log_print(ANDROID_LOG_INFO,"GyGlass","GY_EVT=KEYBOARD value=ok");
     }
     gyglass::PatchEvidence evidence{};
     int status=gyglass::apply_keyboard(env,kb,config_,&evidence);
     report(status);
     report_points(status,evidence);
+    if((status==4||status==5)&&!map_logged_){map_logged_=true;emit_event('M');}
+    else if((status==1||status==2)&&!error_logged_){error_logged_=true;emit_event('X');}
     next_ns_=now+3000000000LL;
    }
    env->DeleteLocalRef(kb);
@@ -131,6 +161,14 @@ class GyGlassModule final:public zygisk::ModuleBase {
   busy_=false;
  }
  private:
+ void emit_event(char event) noexcept {
+  if(companion_fd_<0) return;
+  unsigned char payload[6]{kEvent,static_cast<unsigned char>(event),0,0,0,0};
+  const int32_t pid=static_cast<int32_t>(getpid());
+  std::memcpy(payload+2,&pid,sizeof(pid));
+  // No response or wait: never block the IME main thread for diagnostics.
+  (void)send(companion_fd_,payload,sizeof(payload),MSG_NOSIGNAL|MSG_DONTWAIT);
+ }
  void refresh_config() noexcept {
   if(companion_fd_<0)return;
   timeval lim{};lim.tv_usec=30000;
@@ -178,6 +216,7 @@ class GyGlassModule final:public zygisk::ModuleBase {
  int companion_fd_=-1;
  bool active_=false,enabled_=false,busy_=false;
  bool main_thread_logged_=false,keyboard_logged_=false;
+ bool map_logged_=false,error_logged_=false;
  int last_points_[7]{-1,-1,-1,-1,-1,-1,-1};
  int last_status_=-99;
  int64_t next_ns_=0;
