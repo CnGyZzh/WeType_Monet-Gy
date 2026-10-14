@@ -56,7 +56,7 @@ void companion_handler(int fd) {
     }
     if(logfd>=0) {
      char line[80]{};
-     const int len=std::snprintf(line,sizeof(line),"epoch=%lld pid=%ld stage=%c\\n",
+     const int len=std::snprintf(line,sizeof(line),"epoch=%lld pid=%ld stage=%c\n",
        static_cast<long long>(time(nullptr)),static_cast<long>(pid),event);
      if(len>0 && len<static_cast<int>(sizeof(line))) (void)write(logfd,line,static_cast<size_t>(len));
      close(logfd);
