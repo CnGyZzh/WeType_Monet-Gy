@@ -47,8 +47,10 @@ jobs:
         run: |
           set -euo pipefail
           # Use the preinstalled sdkmanager; avoid legacy "tools" package.
-          yes | sdkmanager --licenses > /tmp/gyglass-sdk-licenses.log 2>&1 || true
-          sdkmanager --install "ndk;27.2.12479018" "cmake;3.22.1"
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses > /tmp/gyglass-sdk-licenses.log 2>&1 || true
+          "$SDKMANAGER" --install "ndk;27.2.12479018" "cmake;3.22.1"
           test -s "$ANDROID_HOME/ndk/27.2.12479018/build/cmake/android.toolchain.cmake"
       - name: Compile ARM64 component (renderer not yet implemented)
         id: compile
