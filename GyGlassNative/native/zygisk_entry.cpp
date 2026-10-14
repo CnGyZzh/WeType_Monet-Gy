@@ -49,6 +49,30 @@ void companion_handler(int fd) {
     }
     close(dir);
    }
+  } else if(q==kEvent) {
+   // One-time native stage notifications. Fixed size, bounded and text-free.
+   unsigned char payload[5]{};
+   if(recv(fd,payload,sizeof(payload),MSG_WAITALL)!=static_cast<ssize_t>(sizeof(payload)))break;
+   const char event=static_cast<char>(payload[0]);
+   if(std::strchr("IRFTUKMX",event)==nullptr)break;
+   int32_t pid=0;
+   std::memcpy(&pid,payload+1,sizeof(pid));
+   if(pid<=0)break;
+   const int dir=open(kFolder,O_RDONLY|O_DIRECTORY|O_CLOEXEC|O_NOFOLLOW);
+   if(dir>=0) {
+    const int out=openat(dir,"native_events.log",O_WRONLY|O_CREAT|O_APPEND|O_CLOEXEC|O_NOFOLLOW,0600);
+    if(out>=0) {
+     struct stat st{};
+     if(fstat(out,&st)==0 && S_ISREG(st.st_mode) && st.st_size<16384) {
+      char row[72]{};
+      const int n=std::snprintf(row,sizeof(row),"NATIVE_EVENT_PID=%ld NATIVE_EVENT=%c\\n",
+                              static_cast<long>(pid),event);
+      if(n>0 && static_cast<size_t>(n)<sizeof(row)) (void)write(out,row,static_cast<size_t>(n));
+     }
+     close(out);
+    }
+    close(dir);
+   }
   } else if(q==kQuery) {
    int dir=open(kFolder,O_RDONLY|O_DIRECTORY|O_CLOEXEC|O_NOFOLLOW);
    auto config=gyglass::read_preset_at(dir);
