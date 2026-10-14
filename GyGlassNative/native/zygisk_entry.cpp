@@ -8,6 +8,7 @@
 #include "zygisk.hpp"
 #include "style.hpp"
 #include "preset_bridge.hpp"
+#include "monet_source.hpp"
 
 namespace {
 constexpr char kTarget[] = "com.tencent.wetype";
@@ -58,9 +59,21 @@ class GyGlassModule final : public zygisk::ModuleBase {
   if(!active_) return;
   // Until an actual IME-scoped ART renderer is installed, report only
   // native injection and preset discovery, not hook/render success.
-  __android_log_print(ANDROID_LOG_INFO,"GyGlass",
-      "native_entry=loaded preset=%s renderer=not_implemented",
-      mode_==gyglass::Mode::Independent?"independent":"seamless");
+  const gyglass::MonetSource monet=gyglass::query_monet(env_);
+  if(monet.available){
+   // The palette is sampled once for diagnostic readiness.
+   // A future keyboard-show hook will refresh it on demand.
+   const auto style=gyglass::resolve(mode_==gyglass::Mode::Independent,
+                                      monet.dark,monet.neutral,monet.accent);
+   __android_log_print(ANDROID_LOG_INFO,"GyGlass",
+       "native_entry=loaded preset=%s monet=available key_alpha=%u renderer=not_implemented",
+       mode_==gyglass::Mode::Independent?"independent":"seamless",
+       static_cast<unsigned>(style.key>>24));
+  }else{
+   __android_log_print(ANDROID_LOG_INFO,"GyGlass",
+       "native_entry=loaded preset=%s monet=unavailable renderer=not_implemented",
+       mode_==gyglass::Mode::Independent?"independent":"seamless");
+  }
  }
  private:
  zygisk::Api* api_=nullptr;
