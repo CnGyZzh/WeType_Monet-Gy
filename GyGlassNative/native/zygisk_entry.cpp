@@ -26,43 +26,43 @@ class GyGlassModule;
 GyGlassModule* active_instance=nullptr;
 void replacement(JNIEnv*,jobject,jlong,jint);
 
+// On-demand messages are delivered by Zygisk's root companion. No resident
+// logger, no chat contents, and no background polling.
 void companion_handler(int fd) {
- // Zygisk Root Companion is attached only to this module's target processes.
- // Store stage codes + PID, never captured user input.
  unsigned char q=0;
- while(recv(fd,&q,1,0)==1) {
-  if(q==kQuery){
-   const int dir=open(kFolder,O_RDONLY|O_DIRECTORY|O_CLOEXEC|O_NOFOLLOW);
+ for(;;) {
+  if(recv(fd,&q,1,0)!=1)break;
+  if(q=='I') { // One-time pre-specialization injection proof.
+   struct Proof { int32_t pid; uint8_t registered; } proof{};
+   if(recv(fd,&proof,sizeof(proof),MSG_WAITALL)!=static_cast<ssize_t>(sizeof(proof)))break;
+   if(proof.pid<=0 || proof.registered>1)break;
+   int dir=open(kFolder,O_RDONLY|O_DIRECTORY|O_CLOEXEC|O_NOFOLLOW);
+   if(dir>=0) {
+    int out=openat(dir,"injection_state.txt",O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC|O_NOFOLLOW,0600);
+    if(out>=0) {
+     char data[120]{};
+     const int n=std::snprintf(data,sizeof(data),
+       "NATIVE_PRE=ok\\nNATIVE_PID=%ld\\nNATIVE_QUEUE_REGISTERED=%u\\n",
+       static_cast<long>(proof.pid),static_cast<unsigned>(proof.registered));
+     if(n>0 && static_cast<size_t>(n)<sizeof(data)) (void)write(out,data,static_cast<size_t>(n));
+     close(out);
+    }
+    close(dir);
+   }
+  } else if(q==kQuery) {
+   int dir=open(kFolder,O_RDONLY|O_DIRECTORY|O_CLOEXEC|O_NOFOLLOW);
    auto config=gyglass::read_preset_at(dir);
-   if(dir>=0)close(dir);
+   if(dir>=0) {
+    int state=openat(dir,"companion_state.txt",O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC|O_NOFOLLOW,0600);
+    if(state>=0) {
+     static constexpr char marker[]="COMPANION_REQUEST=ok\\n";
+     (void)write(state,marker,sizeof(marker)-1);
+     close(state);
+    }
+    close(dir);
+   }
    auto reply=gyglass::make_reply(config);
    if(send(fd,&reply,sizeof(reply),MSG_NOSIGNAL)!=static_cast<ssize_t>(sizeof(reply)))break;
-  } else if(q==kEvent){
-   unsigned char payload[5]{};
-   if(recv(fd,payload,sizeof(payload),MSG_WAITALL)!=static_cast<ssize_t>(sizeof(payload)))break;
-   const char event=static_cast<char>(payload[0]);
-   if(!std::strchr("IRFTUKMX",event))continue;
-   int32_t pid=0;
-   std::memcpy(&pid,payload+1,sizeof(pid));
-   if(pid<=0)continue;
-   const int dir=open(kFolder,O_RDONLY|O_DIRECTORY|O_CLOEXEC|O_NOFOLLOW);
-   if(dir<0)continue;
-   int logfd=openat(dir,"hook_events.txt",O_WRONLY|O_CREAT|O_APPEND|O_CLOEXEC|O_NOFOLLOW,0600);
-   if(logfd>=0) {
-    struct stat st{};
-    if(fstat(logfd,&st)==0 && st.st_size>65536) {
-     close(logfd);
-     logfd=openat(dir,"hook_events.txt",O_WRONLY|O_TRUNC|O_CLOEXEC|O_NOFOLLOW,0600);
-    }
-    if(logfd>=0) {
-     char line[80]{};
-     const int len=std::snprintf(line,sizeof(line),"epoch=%lld pid=%ld stage=%c\n",
-       static_cast<long long>(time(nullptr)),static_cast<long>(pid),event);
-     if(len>0 && len<static_cast<int>(sizeof(line))) (void)write(logfd,line,static_cast<size_t>(len));
-     close(logfd);
-    }
-   }
-   close(dir);
   } else break;
  }
  close(fd);
@@ -105,6 +105,15 @@ class GyGlassModule final:public zygisk::ModuleBase {
    __android_log_print(ANDROID_LOG_WARN,"GyGlass","poll_hook=not_available");
   }
   emit_event(enabled_?'R':'F');
+  // This proof is a process-specific signal independent of logcat.
+  // No wait on startup: one small socket message, no service daemon.
+  if(companion_fd_>=0) {
+   struct Proof { int32_t pid; uint8_t registered; } proof{
+     static_cast<int32_t>(getpid()), static_cast<uint8_t>(enabled_?1:0)};
+   const unsigned char query='I';
+   if(send(companion_fd_,&query,1,MSG_NOSIGNAL)==1)
+     (void)send(companion_fd_,&proof,sizeof(proof),MSG_NOSIGNAL);
+  }
  }
  void postAppSpecialize(const zygisk::AppSpecializeArgs*) override {
   if(active_) {
