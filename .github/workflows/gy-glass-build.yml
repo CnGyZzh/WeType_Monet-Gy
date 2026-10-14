@@ -1,54 +1,42 @@
-name: GyGlass v29 Independent Hook Test
+name: GyGlass Independent Hook Test Build
 on:
   push:
-    branches:
-      - gy-glass-v29-test
+    branches: [gy-glass-v29-test]
     paths:
-      - "GyGlass_Standalone_source.tar.xz.b64"
-      - ".github/workflows/gy-glass-build.yml"
+      - 'GyGlass_Standalone/**'
+      - '.github/workflows/gy-glass-build.yml'
   workflow_dispatch:
-
 permissions:
   contents: read
-
 jobs:
   build:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
-      - name: Restore original Gy source files
-        shell: bash
-        run: |
-          set -euo pipefail
-          base64 -d GyGlass_Standalone_source.tar.xz.b64 > /tmp/gy-glass-v29.tar.xz
-          tar -tJf /tmp/gy-glass-v29.tar.xz
-          tar -xJf /tmp/gy-glass-v29.tar.xz
-          test -f GyGlass_Standalone/app/src/main/java/com/gy/wetype/hook/MainHook.java
-          ! find GyGlass_Standalone -name '*.apk' | grep -q .
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
       - name: Install SDK 35
-        run: sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
+        run: sdkmanager --install 'platforms;android-35' 'build-tools;35.0.0'
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.7"
-      - name: Compile independent Hook
-        run: cd GyGlass_Standalone && gradle --no-daemon :app:assembleDebug --stacktrace
-      - name: Build and check KernelSU ZIP
+          gradle-version: '8.7'
+      - name: Compile Gy independent Hook
+        working-directory: GyGlass_Standalone
+        run: gradle --no-daemon :app:assembleDebug --stacktrace
+      - name: Package KernelSU module
+        working-directory: GyGlass_Standalone
         run: |
-          set -euo pipefail
-          cd GyGlass_Standalone
           cp app/build/outputs/apk/debug/app-debug.apk ksu/gyhook.apk
           python3 package.py
           unzip -t out/GyGlass_Standalone_v29.zip
           sha256sum out/GyGlass_Standalone_v29.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: GyGlass-v29-KSU-test
+          name: GyGlass-v29-test-KSU
           path: |
             GyGlass_Standalone/out/GyGlass_Standalone_v29.zip
             GyGlass_Standalone/app/build/outputs/apk/debug/app-debug.apk
