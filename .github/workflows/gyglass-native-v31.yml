@@ -41,13 +41,12 @@ jobs:
           g++ -std=c++17 -Wall -Wextra -Werror GyGlassNative/tests/palette_test.cpp -o /tmp/gyglass_palette_test
           /tmp/gyglass_palette_test
           bash -n GyGlassNative/module/preset.sh
-      - uses: android-actions/setup-android@v3
       - name: Install Android NDK and CMake
         id: sdk
         shell: bash
         run: |
           set -euo pipefail
-          sdkmanager --install "ndk;27.2.12479018" "cmake;3.22.1"
+          # Ubuntu runner provides a functioning sdkmanager; avoid the obsolete "tools" package.\n          yes | sdkmanager --licenses > /tmp/gyglass-sdk-licenses.log 2>&1 || true\n          sdkmanager --install "ndk;27.2.12479018" "cmake;3.22.1"
           test -s "$ANDROID_HOME/ndk/27.2.12479018/build/cmake/android.toolchain.cmake"
       - name: Compile ARM64 component (renderer not yet implemented)
         id: compile
