@@ -1,11 +1,11 @@
-GyGlass v29 CI report
-run_id=38513744874
+GyGlass v30 CI report
+run_id=38514401991
 setup_java=success
 setup_sdk35=success
 setup_gradle=success
 compile_outcome=success
 runner_job_status=success
-utc_date=2026-10-14T04:54:15Z
+utc_date=2026-10-14T05:01:54Z
 --- Gradle log (last 120 lines) ---
 
 Welcome to Gradle 8.7!
@@ -19,27 +19,11 @@ For more details see https://docs.gradle.org/8.7/release-notes.html
 
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.7/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
-WARNING: We recommend using a newer Android Gradle plugin to use compileSdk = 35
-
-This Android Gradle plugin (8.5.2) was tested up to compileSdk = 34.
-
-You are strongly encouraged to update your project to use a newer
-Android Gradle plugin that has been tested with compileSdk = 35.
-
-If you are already using the latest version of the Android Gradle plugin,
-you may need to wait until a newer version with support for compileSdk = 35 is available.
-
-For more information refer to the compatibility table:
-https://d.android.com/r/tools/api-level-support
-
-To suppress this warning, add/update
-    android.suppressUnsupportedCompileSdk=35
-to this project's gradle.properties.
 > Task :app:preBuild UP-TO-DATE
 > Task :app:preDebugBuild UP-TO-DATE
 > Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
-> Task :app:checkDebugAarMetadata
 > Task :app:javaPreCompileDebug
+> Task :app:checkDebugAarMetadata
 > Task :app:generateDebugResValues
 > Task :app:mapDebugSourceSetPaths
 > Task :app:generateDebugResources
@@ -54,16 +38,16 @@ to this project's gradle.properties.
 > Task :app:compileDebugShaders NO-SOURCE
 > Task :app:generateDebugAssets UP-TO-DATE
 > Task :app:mergeDebugAssets
-> Task :app:compressDebugAssets
 > Task :app:desugarDebugFileDependencies
+> Task :app:compressDebugAssets
 > Task :app:processDebugJavaRes NO-SOURCE
+> Task :app:mergeDebugStartupProfile
 > Task :app:checkDebugDuplicateClasses
 > Task :app:processDebugManifestForPackage
 > Task :app:mergeDebugJavaResource
-> Task :app:mergeDebugStartupProfile
+> Task :app:mergeDebugJniLibFolders
 > Task :app:mergeExtDexDebug
 > Task :app:mergeLibDexDebug
-> Task :app:mergeDebugJniLibFolders
 > Task :app:mergeDebugNativeLibs NO-SOURCE
 > Task :app:stripDebugDebugSymbols NO-SOURCE
 > Task :app:processDebugResources
@@ -77,7 +61,7 @@ to this project's gradle.properties.
 > Task :app:packageDebug
 > Task :app:createDebugApkListingFileRedirect
 > Task :app:assembleDebug
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/compile-1791953631243.json
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/compile-1791954083013.json
 
-BUILD SUCCESSFUL in 27s
+BUILD SUCCESSFUL in 36s
 33 actionable tasks: 33 executed
