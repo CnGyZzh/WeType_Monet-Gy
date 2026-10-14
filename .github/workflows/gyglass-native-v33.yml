@@ -67,6 +67,7 @@ jobs:
           cmake --build /tmp/gyglass-v33-build --parallel 2
           test -s /tmp/gyglass-v33-build/libgyglass.so
           file /tmp/gyglass-v33-build/libgyglass.so
+          mkdir -p GyGlassNative/out
           cp /tmp/gyglass-v33-build/libgyglass.so GyGlassNative/out/arm64-v8a.so
           readelf -Ws /tmp/gyglass-v33-build/libgyglass.so > /tmp/gyglass-v33-symbols.txt
           grep -q 'zygisk_module_entry' /tmp/gyglass-v33-symbols.txt
