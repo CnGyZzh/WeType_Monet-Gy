@@ -2,18 +2,23 @@
 #include <cassert>
 #include <string_view>
 using namespace gyglass;
-int main(){
- auto first=[](std::string_view c,std::string_view f){
-  return c=="com.tencent.wetype.plugin.hld.s" &&
-   (f=="ime_color_btn_white_bg"||f=="ime_color_btn_grey_bg"||f=="ime_color_btn_white_border");
+int main() {
+ static_assert(host_draw_contract.size()==4);
+ // A verified 57206-like runtime class/method table passes.
+ auto all=[](std::string_view c,std::string_view m,std::string_view d) {
+  for(const auto& x:host_draw_contract) {
+   if(x.owner==c && x.name==m && x.descriptor==d) return true;
+  }
+  return false;
  };
- auto found=match_host_signature(first);
- assert(found && found->class_name=="com.tencent.wetype.plugin.hld.s");
- auto fallback=[](std::string_view c,std::string_view f){
-  return c=="com.tencent.wetype.plugin.hld.o" &&
-   (f=="ime_key_white_color"||f=="ime_key_grey_color"||f=="ime_key_white_border_color");
+ assert(match_host_draw_contract(all));
+ // A future update can retain names but change the draw method's prototype.
+ auto updated=[](std::string_view c,std::string_view m,std::string_view d) {
+  if(m=="d" && c=="com.tencent.wetype.plugin.hld.keyboard.selfdraw.e") return false;
+  for(const auto& x:host_draw_contract)
+   if(x.owner==c && x.name==m && x.descriptor==d)return true;
+  return false;
  };
- found=match_host_signature(fallback);
- assert(found && found->class_name=="com.tencent.wetype.plugin.hld.o");
- assert(match_host_signature([](auto,auto){return false;})==nullptr);
+ assert(!match_host_draw_contract(updated));
+ assert(!match_host_draw_contract([](auto,auto,auto){return false;}));
 }
