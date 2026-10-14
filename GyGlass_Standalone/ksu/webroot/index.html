@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Gy 玻璃键盘</title><style>
+<title>GyGlass</title><style>
 :root { font-family: system-ui,"Noto Sans SC",sans-serif; color-scheme:light; }
 * { box-sizing:border-box; }
 body { margin:0; min-height:100vh; background:linear-gradient(145deg,#dfdaf1,#c5d4ed 60%,#d4d0ea); color:#2d2a40; }
@@ -16,11 +16,11 @@ p { line-height:1.7; font-size:13px; }
 .preset:disabled { opacity:.60; }
 #status { margin-top:18px; font-size:13px; white-space:pre-wrap; min-height:24px; color:#55466f; }
 footer { padding:8px 5px; color:#686179; }
-</style></head><body><main><header><small>GY / GLASS KEYBOARD</small><h1>玻璃键盘</h1><p>动态 Monet 配色 · 两种玻璃预设 · 仅在微信输入法生效</p></header>
+</style></head><body><main><header><small>GY / GLASS KEYBOARD</small><h1>GyGlass</h1><p>动态 Monet 配色 · 两种玻璃预设 · 仅在微信输入法生效</p></header>
 <section class="panel"><button class="preset" id="off"><b>一体式玻璃</b><small>默认 · 无独立字母键背景</small></button>
 <button class="preset" id="on"><b>独立玻璃按键</b><small>半透明键帽与柔和描边</small></button>
 <div id="status" role="status" aria-live="polite">正在读取状态…</div></section>
-<footer><p>切换后收起并重新打开微信输入法。首次需在 LSPosed 中启用 Gy Hook，作用域仅勾选微信输入法。</p></footer></main>
+<footer><p>切换后重新打开微信输入法。首次使用请在 LSPosed 中启用 GyGlass，仅勾选微信输入法。</p></footer></main>
 <script>
 'use strict';
 const switchScript='/data/adb/modules/Wetype_Monet/switch.sh';
@@ -41,7 +41,7 @@ async function selectPreset(value){
  try{
    const r=await rootExec('sh '+switchScript+' '+value);
    if(r.code!==0 || !r.out.includes('RESULT=APPLIED'))throw Error(r.err||r.out||'写入失败');
-   mark(value);setStatus('已保存：'+(value==='on'?'独立玻璃按键':'一体式玻璃')+'。收起并重新打开键盘后生效。');
+   mark(value);setStatus('预设已写入：'+(value==='on'?'独立玻璃按键':'一体式玻璃')+'。重新打开输入法后，请检查渲染效果。');
  }catch(e){setStatus('切换失败：'+e.message);}
  finally{busy=false;for(const b of document.querySelectorAll('.preset'))b.disabled=false;}
 }
@@ -49,7 +49,15 @@ for(const button of document.querySelectorAll('.preset'))button.onclick=()=>sele
 async function load(){
  try{const r=await rootExec('sh '+switchScript+' status');if(r.code!==0)throw Error(r.err||r.out);
  const match=r.out.match(/^STATE=(on|off)$/m);if(!match)throw Error('状态输出异常');
- mark(match[1]);setStatus('当前预设：'+(match[1]==='on'?'独立玻璃按键':'一体式玻璃'));
+ mark(match[1]);
+ const installed=/^HOOK_PACKAGE=installed$/m.test(r.out);
+ const runtime=(r.out.match(/^HOOK_RUNTIME=(.+)$/m)||[])[1]||'unverified';
+ const mode=(r.out.match(/^HOOK_MODE=(.+)$/m)||[])[1]||'';
+ setStatus('当前预设：'+(match[1]==='on'?'独立玻璃按键':'一体式玻璃')+
+ '\nHook 组件：'+(installed?'已注册':'尚未注册')+
+ '\n上次 Hook 报告：'+(runtime==='active'?'已加载':'尚未验证')+
+ (mode?' · 预设 '+mode:'')+
+ '\n提示：配置成功并不等于实际渲染成功。');
  }catch(e){setStatus('状态读取失败：'+e.message);}
 }
 load();
