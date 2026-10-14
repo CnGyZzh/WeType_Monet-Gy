@@ -6,6 +6,12 @@
 #include "preset_bridge.hpp"
 #include "monet_source.hpp"
 namespace gyglass {
+struct PatchEvidence {
+ bool signature_ok=false;
+ bool map_ok=false;
+ bool monet_ok=false;
+ unsigned char key_status[4]{};  // 0=not found, 1=already correct, 2=written
+};
 // Experimental, strictly limited to WeType's selfdraw keyboard View. No Window blur.
 inline bool clear_error(JNIEnv* e) {if(!e->ExceptionCheck())return true;e->ExceptionClear();return false;}
 inline jobject locate_view(JNIEnv* e,jobject node,int& visited,int depth) {
@@ -93,7 +99,8 @@ inline jobject discover_keyboard(JNIEnv* e) {
  e->DeleteLocalRef(map);e->DeleteLocalRef(mc);e->DeleteLocalRef(ime);
  return result;
 }
-inline int apply_keyboard(JNIEnv* e,jobject keyboard,const PresetConfig& preset) {
+inline int apply_keyboard(JNIEnv* e,jobject keyboard,const PresetConfig& preset,PatchEvidence* evidence=nullptr) {
+ if(evidence)*evidence=PatchEvidence{};
  if(!keyboard)return 0;
  jclass vc=e->GetObjectClass(keyboard);
  jclass cc=e->FindClass("java/lang/Class");
@@ -116,11 +123,14 @@ inline int apply_keyboard(JNIEnv* e,jobject keyboard,const PresetConfig& preset)
  }
  e->DeleteLocalRef(attrs);
  if(!ok){e->DeleteLocalRef(vc);return 1;}
+ if(evidence)evidence->signature_ok=true;
  jmethodID getmap=e->GetMethodID(vc,"getColorMap","()Ljava/util/HashMap;");
  jobject m=getmap?e->CallObjectMethod(keyboard,getmap):nullptr;
  if(!m||!clear_error(e)){clear_error(e);if(m)e->DeleteLocalRef(m);e->DeleteLocalRef(vc);return 2;}
+ if(evidence)evidence->map_ok=true;
  const MonetSource colors=query_monet(e);
  if(!colors.available){e->DeleteLocalRef(m);e->DeleteLocalRef(vc);return 2;}
+ if(evidence)evidence->monet_ok=true;
  const Palette p=resolve(preset.mode==Mode::Independent,colors.dark,
                          colors.neutral,colors.accent,preset.key_opacity_percent);
  const uint32_t colors_out[]={p.key,p.function_key,p.border,p.border};
@@ -143,11 +153,12 @@ inline int apply_keyboard(JNIEnv* e,jobject keyboard,const PresetConfig& preset)
    jobject old=e->CallObjectMethod(m,get,k);
    if(old&&clear_error(e)&&e->IsInstanceOf(old,integer)) {
     ++matched;
+    if(evidence)evidence->key_status[i]=1;
     jint before=e->CallIntMethod(old,unbox);
     if(clear_error(e)&&static_cast<uint32_t>(before)!=colors_out[i]) {
      jobject val=e->CallStaticObjectMethod(integer,box,static_cast<jint>(colors_out[i]));
      if(val&&clear_error(e)){jobject prev=e->CallObjectMethod(m,put,k,val);
-      if(clear_error(e))++updates;
+      if(clear_error(e)){++updates;if(evidence)evidence->key_status[i]=2;}
       if(prev)e->DeleteLocalRef(prev);
      }
      clear_error(e);if(val)e->DeleteLocalRef(val);
