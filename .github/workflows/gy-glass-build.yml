@@ -22,13 +22,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
+        id: java
         with:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+        id: android
       - name: Install Android SDK 35
+        id: sdk35
         run: sdkmanager --install 'platforms;android-35' 'build-tools;35.0.0'
       - uses: gradle/actions/setup-gradle@v4
+        id: setupgradle
         with:
           gradle-version: '8.7'
       - name: Compile independent Gy Hook
@@ -60,6 +64,11 @@ jobs:
           mkdir -p GyGlass_Standalone/out
           {
             echo 'GyGlass v29 CI report'
+            echo "run_id=$GITHUB_RUN_ID"
+            echo "setup_java=${{ steps.java.outcome }}"
+            echo "setup_android=${{ steps.android.outcome }}"
+            echo "setup_sdk35=${{ steps.sdk35.outcome }}"
+            echo "setup_gradle=${{ steps.setupgradle.outcome }}"
             echo "compile_outcome=${{ steps.compile.outcome }}"
             echo "runner_job_status=${{ job.status }}"
             echo "utc_date=$(date -u +%FT%TZ)"
