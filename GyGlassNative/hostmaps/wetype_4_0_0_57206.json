@@ -1,0 +1,96 @@
+{
+  "schema": "gyglass-host-layout-v1",
+  "host_package": "com.tencent.wetype",
+  "manifest": {
+    "versionName": "4.0.0",
+    "versionCode": 57206
+  },
+  "ui_reported_version": "4.0.0.58111",
+  "version_caveat": "Manifest (4.0.0/57206) and UI version (4.0.0.58111) are different numbering schemes; verify method/resource fingerprints before declaring compatibility.",
+  "apk_sha256": "5ccda82546ec407fa52f67b09b9ed7c3362963926f0f539fcbc70eef3cae3c66",
+  "classes": {
+    "keyboard": {
+      "type": "Lcom/tencent/wetype/plugin/hld/keyboard/selfdraw/o;",
+      "source": "KeyboardView.kt",
+      "methods": {
+        "onDraw": "(Landroid/graphics/Canvas;)V",
+        "getButtonDrawer": "()Lcom/tencent/wetype/plugin/hld/keyboard/selfdraw/e;",
+        "getColorMap": "()Ljava/util/HashMap;"
+      }
+    },
+    "drawer": {
+      "type": "Lcom/tencent/wetype/plugin/hld/keyboard/selfdraw/e;",
+      "source": "ButtonDrawer.kt",
+      "methods": {
+        "d": "(Landroid/graphics/Canvas;)V"
+      }
+    },
+    "round_button": {
+      "type": "Lcom/tencent/wetype/plugin/hld/view/z;",
+      "source": "ImeRoundButtonDrawable.kt",
+      "methods": {
+        "onStateChange": "([I)Z"
+      }
+    }
+  },
+  "layouts": [
+    {
+      "name": "assets/keyboard/output/S2ChineseQwertyKeyboard.json",
+      "sha256": "683011cff7330b0366fa4119482e6abd475c342e36f80c6147bb5514bb491de5",
+      "letter": {
+        "count": 26,
+        "bg": "ime_color_btn_white_bg",
+        "border": "ime_color_btn_white_border",
+        "shadow": "ime_color_btn_white_shadow"
+      },
+      "functional": {
+        "ids": [
+          "shift",
+          "delete",
+          "num",
+          "emoji",
+          "enter"
+        ],
+        "bg": "ime_color_btn_grey_bg",
+        "border": "ime_color_btn_grey_border",
+        "shadow": "ime_color_btn_grey_shadow"
+      },
+      "space": {
+        "id": "space",
+        "bg": "ime_color_btn_white_bg"
+      }
+    },
+    {
+      "name": "assets/keyboard/output/S3EnglishQwertyKeyboard.json",
+      "sha256": "d681baf4a98c260fd64aa1950e71215e039f79acbde2622f87f9e5eb30b48b93",
+      "letter": {
+        "count": 26,
+        "bg": "ime_color_btn_white_bg",
+        "border": "ime_color_btn_white_border",
+        "shadow": "ime_color_btn_white_shadow"
+      },
+      "functional": {
+        "ids": [
+          "shift",
+          "delete",
+          "num",
+          "emoji",
+          "enter"
+        ],
+        "bg": "ime_color_btn_grey_bg",
+        "border": "ime_color_btn_grey_border",
+        "shadow": "ime_color_btn_grey_shadow"
+      },
+      "space": {
+        "id": "space",
+        "bg": "ime_color_btn_white_bg"
+      }
+    }
+  ],
+  "notes": [
+    "Read-only metadata extracted from user-provided APK; no APK, assets, or third-party binaries included.",
+    "Do not globally change white_bg: space and punctuation also depend on this attr.",
+    "Do not apply Window.setBackgroundBlurRadius to the entire input window.",
+    "Classes and methods are candidate hook targets, not implemented or validated at runtime."
+  ]
+}
