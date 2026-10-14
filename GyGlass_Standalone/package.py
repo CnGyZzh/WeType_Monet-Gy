@@ -5,7 +5,7 @@ root=Path(__file__).resolve().parent
 apk=root/'ksu/gyhook.apk'
 if not apk.is_file():
     raise SystemExit('ERROR: build app APK first and copy it to ksu/gyhook.apk')
-out=root/'out/GyGlass_Standalone_v29.zip'
+out=root/'out/GyGlass_v30_KSU.zip'
 out.parent.mkdir(exist_ok=True)
 with ZipFile(out,'w',ZIP_DEFLATED,compresslevel=8) as z:
     for p in sorted((root/'ksu').rglob('*')):
