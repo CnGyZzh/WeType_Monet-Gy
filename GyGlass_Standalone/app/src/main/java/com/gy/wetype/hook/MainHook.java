@@ -2,16 +2,20 @@ package com.gy.wetype.hook;
 
 import android.app.Application;
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.inputmethodservice.InputMethodService;
+import android.view.View;
 import android.util.TypedValue;
 import android.view.Window;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,6 +39,9 @@ public final class MainHook implements IXposedHookLoadPackage {
     private volatile int borderColor = 0x20FFFFFF;
     private volatile int panelColor = 0x50BEBACC;
     private volatile Context appContext;
+    private volatile Map<Integer,Integer> transparentResources=new HashMap<>();
+    private volatile int toolbarId=-1;
+    private volatile boolean lastIndependent=false;
 
     @Override public void handleLoadPackage(XC_LoadPackage.LoadPackageParam param) {
         if (!TARGET.equals(param.packageName)) return;
@@ -65,6 +72,19 @@ public final class MainHook implements IXposedHookLoadPackage {
             for(String k : new String[]{"ime_color_btn_white_border","ime_color_btn_grey_border","ime_key_white_border_color","ime_key_grey_border_color"}) add(roles,attrs,k,BORDER);
             if (roles.isEmpty()) { XposedBridge.log(TAG+"ATTR_NOT_FOUND"); return; }
             targetAttributes = roles;
+            Class<?> colors=XposedHelpers.findClassIfExists("com.tencent.wetype.plugin.hld.p",loader);
+            Class<?> ids=XposedHelpers.findClassIfExists("com.tencent.wetype.plugin.hld.s",loader);
+            HashMap<Integer,Integer> clear=new HashMap<>();
+            for(String n:new String[]{"ime_skin_keyboard_start_color","ime_skin_keyboard_end_color",
+                "ime_skin_dark_keyboard_start_color","ime_skin_dark_keyboard_end_color",
+                "ime_skin_candidate_start_color","ime_skin_candidate_end_color",
+                "ime_skin_dark_candidate_start_color","ime_skin_dark_candidate_end_color"}){
+                if(colors!=null)add(clear,colors,n,1);
+                if(ids!=null)add(clear,ids,n,1);
+            }
+            transparentResources=clear;
+            if(ids!=null)try{toolbarId=ids.getField("custom_toolbar_item_container_view").getInt(null);}
+                catch(Throwable ignored){}
             readAppearance();
 
             XposedBridge.hookAllMethods(Resources.Theme.class,"resolveAttribute",new XC_MethodHook() {
@@ -85,8 +105,11 @@ public final class MainHook implements IXposedHookLoadPackage {
                     result.resourceId=0;
                 }
             });
+            addKeyboardBackgroundHooks();
+            addToolbarHook();
             addWindowHook(loader);
-            XposedBridge.log(TAG+"HOOK_ACTIVE attributes="+roles.size());
+            writeStatus("active");
+            XposedBridge.log(TAG+"HOOK_ACTIVE attributes="+roles.size()+" transparentColors="+clear.size());
         } catch(Throwable e) { XposedBridge.log(TAG+"HOOK_FAILED "+e); }
     }
 
@@ -99,28 +122,80 @@ public final class MainHook implements IXposedHookLoadPackage {
                     InputMethodService ime=(InputMethodService)hook.thisObject;
                     if(ime.getWindow()==null || ime.getWindow().getWindow()==null) return;
                     Window window=ime.getWindow().getWindow();
-                    window.setBackgroundDrawable(new ColorDrawable(panelColor));
-                    try { window.setBackgroundBlurRadius(20); } catch(Throwable ignored) {}
+                    // No full-window blur: it blurs WeChat content outside the keyboard.
+                    window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+                    writeStatus("visible");
                 } catch(Throwable e) { XposedBridge.log(TAG+"WINDOW_FAILED "+e); }
             }
         };
         try { XposedBridge.hookAllMethods(InputMethodService.class,"onWindowShown",apply); }
         catch(Throwable e) { XposedBridge.log(TAG+"WINDOW_STAGE_UNAVAILABLE "+e); }
+        try { XposedBridge.hookAllMethods(InputMethodService.class,"onStartInputView",apply); }
+        catch(Throwable e) { XposedBridge.log(TAG+"WINDOW_STAGE_UNAVAILABLE "+e); }
         try {
             Class<?> wxService=XposedHelpers.findClassIfExists("com.tencent.wetype.plugin.hld.WxHldService",loader);
-            if (wxService!=null) XposedBridge.hookAllMethods(wxService,"onStartInputView",apply);
+            if (wxService!=null) {
+                XposedBridge.hookAllMethods(wxService,"onStartInputView",apply);
+                try { XposedBridge.hookAllMethods(wxService,"onCreateInputView",new XC_MethodHook(){
+                    @Override protected void afterHookedMethod(MethodHookParam p){
+                        if(p.getResult() instanceof View)
+                            ((View)p.getResult()).setBackgroundColor(Color.TRANSPARENT);
+                    }
+                }); } catch(Throwable ignored){}
+            }
         } catch(Throwable e) { XposedBridge.log(TAG+"HOST_STAGE_UNAVAILABLE "+e); }
     }
 
+    private void addKeyboardBackgroundHooks(){
+        if(transparentResources.isEmpty())return;
+        XposedBridge.hookAllMethods(Resources.class,"getColor",new XC_MethodHook(){
+            @Override protected void afterHookedMethod(MethodHookParam p){
+                if(p.args.length>0 && p.args[0] instanceof Integer &&
+                    transparentResources.containsKey((Integer)p.args[0]))
+                    p.setResult(Color.TRANSPARENT);
+            }
+        });
+        XposedBridge.hookAllMethods(Resources.class,"getColorStateList",new XC_MethodHook(){
+            @Override protected void afterHookedMethod(MethodHookParam p){
+                if(p.args.length>0 && p.args[0] instanceof Integer &&
+                    transparentResources.containsKey((Integer)p.args[0]))
+                    p.setResult(ColorStateList.valueOf(Color.TRANSPARENT));
+            }
+        });
+    }
+    private void addToolbarHook(){
+        if(toolbarId<0)return;
+        XC_MethodHook adjust=new XC_MethodHook(){
+            @Override protected void beforeHookedMethod(MethodHookParam p){
+                if(!(p.thisObject instanceof View) || ((View)p.thisObject).getId()!=toolbarId ||
+                   p.args.length<1 || !(p.args[0] instanceof Drawable))return;
+                Drawable d=((Drawable)p.args[0]).mutate(); d.setAlpha(72); p.args[0]=d;
+            }
+        };
+        XposedBridge.hookAllMethods(View.class,"setBackground",adjust);
+        XposedBridge.hookAllMethods(View.class,"setBackgroundDrawable",adjust);
+    }
+    private void writeStatus(String event){
+        Context ctx=appContext;if(ctx==null)return;
+        try {
+            File f=new File(ctx.getFilesDir(),"gyglass_runtime.txt");
+            String t="HOOK=active\nMODE="+(lastIndependent?"on":"off")+
+              "\nEVENT="+event+"\nAT="+System.currentTimeMillis()/1000+"\n";
+            try(FileOutputStream o=new FileOutputStream(f,false)){
+                o.write(t.getBytes(StandardCharsets.UTF_8));
+            }
+        }catch(Throwable ignored){}
+    }
     private void readAppearance() {
         Context ctx=appContext;
         if(ctx==null) return;
         boolean independent = readPreset(ctx);
+        lastIndependent=independent;
         boolean dark=(ctx.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)==Configuration.UI_MODE_NIGHT_YES;
         int neutral=monet(ctx,dark?"system_neutral1_700":"system_neutral1_100",dark?0xFF474250:0xFFCCC8D9);
-        panelColor=alpha(neutral,dark?0x39:0x50);
-        normalFill=alpha(neutral,independent?(dark?0x68:0x76):0);
-        functionFill=alpha(neutral,independent?0x55:0x32);
+        panelColor=alpha(neutral,dark?0x20:0x28);
+        normalFill=alpha(neutral,independent?(dark?0x68:0x58):0);
+        functionFill=alpha(neutral,independent?0x45:0x25);
         borderColor=independent?0x25FFFFFF:0x08FFFFFF;
     }
 
