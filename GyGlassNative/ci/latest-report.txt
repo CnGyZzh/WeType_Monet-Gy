@@ -1,0 +1,8 @@
+run_id=38516872290
+commit=a3d82afb7b5cadd94db63a2f5456ffc0eaf130c4
+source_verify=success
+sdk=skipped
+native_compile=skipped
+job_status=failure
+--- build log ---
+Build not started; inspect source checkout and SDK steps
