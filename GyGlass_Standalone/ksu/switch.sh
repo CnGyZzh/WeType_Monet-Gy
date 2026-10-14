@@ -40,6 +40,8 @@ mv -f "$T" "$F" || { rm -f "$T";echo "RESULT=ERROR commit";exit 13; }
 restorecon "$F" >/dev/null 2>&1 || :
 printf '%s\n' "$mode" > "$S"
 # Restart once on user action only. No background polling or per-key subprocesses.
-am force-stop com.tencent.wetype >/dev/null 2>&1 || :
+if [ "${GY_NO_RESTART:-0}" != 1 ]; then
+ am force-stop com.tencent.wetype >/dev/null 2>&1 || :
+fi
 echo "RESULT=APPLIED"
 report
