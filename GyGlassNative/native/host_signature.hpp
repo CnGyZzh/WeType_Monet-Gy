@@ -2,27 +2,27 @@
 #include <array>
 #include <string_view>
 namespace gyglass {
-// Candidate layouts observed in prior WeType HLD versions.
-// They are NOT trusted until the host ClassLoader resolves all required fields.
-struct HostSignature {
- std::string_view class_name;
- std::string_view normal_key;
- std::string_view special_key;
- std::string_view border;
+struct RequiredHostMethod {
+ std::string_view owner;
+ std::string_view name;
+ std::string_view descriptor;
 };
-inline constexpr std::array<HostSignature,4> known_signatures{{
- {"com.tencent.wetype.plugin.hld.s","ime_color_btn_white_bg","ime_color_btn_grey_bg","ime_color_btn_white_border"},
- {"com.tencent.wetype.plugin.hld.o","ime_color_btn_white_bg","ime_color_btn_grey_bg","ime_color_btn_white_border"},
- {"com.tencent.wetype.plugin.hld.s","ime_key_white_color","ime_key_grey_color","ime_key_white_border_color"},
- {"com.tencent.wetype.plugin.hld.o","ime_key_white_color","ime_key_grey_color","ime_key_white_border_color"}
+// Verified from the user-provided WeType APK (manifest versionCode=57206),
+// using DEX source_file_idx + method_id + proto_id. These are only candidates
+// until the app's ClassLoader has resolved all signatures at runtime.
+inline constexpr std::array<RequiredHostMethod,4> host_draw_contract{{
+ {"com.tencent.wetype.plugin.hld.keyboard.selfdraw.o","onDraw","(Landroid/graphics/Canvas;)V"},
+ {"com.tencent.wetype.plugin.hld.keyboard.selfdraw.o","getButtonDrawer","()Lcom/tencent/wetype/plugin/hld/keyboard/selfdraw/e;"},
+ {"com.tencent.wetype.plugin.hld.keyboard.selfdraw.o","getColorMap","()Ljava/util/HashMap;"},
+ {"com.tencent.wetype.plugin.hld.keyboard.selfdraw.e","d","(Landroid/graphics/Canvas;)V"}
 }};
+// Runtime callers must match class + method + descriptor for EVERY member.
+// Never use obfuscated class name alone; never hook an unmatched version.
 template<class Probe>
-const HostSignature* match_host_signature(Probe&& field_present) {
- for(const auto& s:known_signatures){
-  if(field_present(s.class_name,s.normal_key)&&
-     field_present(s.class_name,s.special_key)&&
-     field_present(s.class_name,s.border)) return &s;
+bool match_host_draw_contract(Probe&& has_method){
+ for(const auto& m:host_draw_contract){
+  if(!has_method(m.owner,m.name,m.descriptor)) return false;
  }
- return nullptr; // Fail closed on unknown/renamed host resources.
+ return true;
 }
 }
