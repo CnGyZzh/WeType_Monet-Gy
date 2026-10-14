@@ -1,8 +1,130 @@
-run_id=38517049726
-commit=aa2cf745d6ae5d293db69ba048061b7eb420e054
+run_id=38517136259
+commit=0e2174809704c24b8995a8b2bf2413869d173cf5
 source_verify=success
-sdk=failure
-native_compile=skipped
+sdk=success
+native_compile=failure
 job_status=failure
 --- build log ---
-Build not started; inspect source checkout and SDK steps
+CMake Deprecation Warning at /usr/local/lib/android/sdk/ndk/27.2.12479018/build/cmake/android.toolchain.cmake:35 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+Call Stack (most recent call first):
+  /usr/local/share/cmake-3.31/Modules/CMakeDetermineSystem.cmake:146 (include)
+  CMakeLists.txt:2 (project)
+
+
+CMake Deprecation Warning at /usr/local/lib/android/sdk/ndk/27.2.12479018/build/cmake/android-legacy.toolchain.cmake:35 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+Call Stack (most recent call first):
+  /usr/local/lib/android/sdk/ndk/27.2.12479018/build/cmake/android.toolchain.cmake:55 (include)
+  /usr/local/share/cmake-3.31/Modules/CMakeDetermineSystem.cmake:146 (include)
+  CMakeLists.txt:2 (project)
+
+
+CMake Deprecation Warning at /usr/local/lib/android/sdk/ndk/27.2.12479018/build/cmake/android.toolchain.cmake:35 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+Call Stack (most recent call first):
+  /tmp/gyglass-build/CMakeFiles/3.31.6/CMakeSystem.cmake:6 (include)
+  CMakeLists.txt:2 (project)
+
+
+-- The CXX compiler identification is Clang 18.0.3
+CMake Deprecation Warning at /usr/local/lib/android/sdk/ndk/27.2.12479018/build/cmake/flags.cmake:18 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+Call Stack (most recent call first):
+  /usr/local/share/cmake-3.31/Modules/Platform/Android-Clang.cmake:23 (include)
+  /usr/local/share/cmake-3.31/Modules/Platform/Android-Clang-CXX.cmake:1 (include)
+  /usr/local/share/cmake-3.31/Modules/CMakeCXXInformation.cmake:48 (include)
+  CMakeLists.txt:2 (project)
+
+
+-- Detecting CXX compiler ABI info
+CMake Deprecation Warning at /usr/local/lib/android/sdk/ndk/27.2.12479018/build/cmake/android.toolchain.cmake:35 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+Call Stack (most recent call first):
+  /tmp/gyglass-build/CMakeFiles/3.31.6/CMakeSystem.cmake:6 (include)
+  /tmp/gyglass-build/CMakeFiles/CMakeScratch/TryCompile-P8bqij/CMakeLists.txt:2 (project)
+
+
+CMake Deprecation Warning at /usr/local/lib/android/sdk/ndk/27.2.12479018/build/cmake/android-legacy.toolchain.cmake:35 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+Call Stack (most recent call first):
+  /usr/local/lib/android/sdk/ndk/27.2.12479018/build/cmake/android.toolchain.cmake:55 (include)
+  /tmp/gyglass-build/CMakeFiles/3.31.6/CMakeSystem.cmake:6 (include)
+  /tmp/gyglass-build/CMakeFiles/CMakeScratch/TryCompile-P8bqij/CMakeLists.txt:2 (project)
+
+
+CMake Deprecation Warning at /usr/local/lib/android/sdk/ndk/27.2.12479018/build/cmake/flags.cmake:18 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+Call Stack (most recent call first):
+  /usr/local/share/cmake-3.31/Modules/Platform/Android-Clang.cmake:23 (include)
+  /usr/local/share/cmake-3.31/Modules/Platform/Android-Clang-CXX.cmake:1 (include)
+  /usr/local/share/cmake-3.31/Modules/CMakeCXXInformation.cmake:48 (include)
+  /tmp/gyglass-build/CMakeFiles/CMakeScratch/TryCompile-P8bqij/CMakeLists.txt:2 (project)
+
+
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/local/lib/android/sdk/ndk/27.2.12479018/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Configuring done (0.5s)
+-- Generating done (0.0s)
+-- Build files have been written to: /tmp/gyglass-build
+[1/2] Building CXX object CMakeFiles/gyglass.dir/zygisk_entry.cpp.o
+FAILED: [code=1] CMakeFiles/gyglass.dir/zygisk_entry.cpp.o 
+/usr/local/lib/android/sdk/ndk/27.2.12479018/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=aarch64-none-linux-android30 --sysroot=/usr/local/lib/android/sdk/ndk/27.2.12479018/toolchains/llvm/prebuilt/linux-x86_64/sysroot -Dgyglass_EXPORTS -I/home/runner/work/WeType_Monet-Gy/WeType_Monet-Gy/GyGlassNative/native/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -O3 -DNDEBUG  -fPIC -fvisibility=hidden -Wall -Wextra -Werror -MD -MT CMakeFiles/gyglass.dir/zygisk_entry.cpp.o -MF CMakeFiles/gyglass.dir/zygisk_entry.cpp.o.d -o CMakeFiles/gyglass.dir/zygisk_entry.cpp.o -c /home/runner/work/WeType_Monet-Gy/WeType_Monet-Gy/GyGlassNative/native/zygisk_entry.cpp
+In file included from /home/runner/work/WeType_Monet-Gy/WeType_Monet-Gy/GyGlassNative/native/zygisk_entry.cpp:1:
+/home/runner/work/WeType_Monet-Gy/WeType_Monet-Gy/GyGlassNative/native/include/zygisk.hpp:277:26: error: unknown type name 'dev_t'
+  277 |     void pltHookRegister(dev_t dev, ino_t inode, const char *symbol, void *newFunc, void **oldFunc);
+      |                          ^
+/home/runner/work/WeType_Monet-Gy/WeType_Monet-Gy/GyGlassNative/native/include/zygisk.hpp:277:37: error: unknown type name 'ino_t'
+  277 |     void pltHookRegister(dev_t dev, ino_t inode, const char *symbol, void *newFunc, void **oldFunc);
+      |                                     ^
+/home/runner/work/WeType_Monet-Gy/WeType_Monet-Gy/GyGlassNative/native/include/zygisk.hpp:338:29: error: unknown type name 'dev_t'
+  338 |     void (*pltHookRegister)(dev_t, ino_t, const char *, void *, void **);
+      |                             ^
+/home/runner/work/WeType_Monet-Gy/WeType_Monet-Gy/GyGlassNative/native/include/zygisk.hpp:338:36: error: unknown type name 'ino_t'
+  338 |     void (*pltHookRegister)(dev_t, ino_t, const char *, void *, void **);
+      |                                    ^
+/home/runner/work/WeType_Monet-Gy/WeType_Monet-Gy/GyGlassNative/native/include/zygisk.hpp:378:34: error: unknown type name 'dev_t'
+  378 | inline void Api::pltHookRegister(dev_t dev, ino_t inode, const char *symbol, void *newFunc, void **oldFunc) {
+      |                                  ^
+/home/runner/work/WeType_Monet-Gy/WeType_Monet-Gy/GyGlassNative/native/include/zygisk.hpp:378:45: error: unknown type name 'ino_t'
+  378 | inline void Api::pltHookRegister(dev_t dev, ino_t inode, const char *symbol, void *newFunc, void **oldFunc) {
+      |                                             ^
+6 errors generated.
+ninja: build stopped: subcommand failed.
