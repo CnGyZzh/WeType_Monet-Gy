@@ -54,6 +54,8 @@ class GyGlassModule final:public zygisk::ModuleBase {
   if(companion_fd_>=0&&!api_->exemptFd(companion_fd_)) {
    close(companion_fd_);companion_fd_=-1;
   }
+  __android_log_print(ANDROID_LOG_INFO,"GyGlass",
+   "GY_EVT=COMPANION value=%s",companion_fd_>=0?"ok":"fail");
   JNINativeMethod m[]={{const_cast<char*>("nativePollOnce"),
                         const_cast<char*>("(JI)V"),
                         reinterpret_cast<void*>(replacement)}};
@@ -66,8 +68,12 @@ class GyGlassModule final:public zygisk::ModuleBase {
   }
  }
  void postAppSpecialize(const zygisk::AppSpecializeArgs*) override {
-  if(active_)__android_log_print(ANDROID_LOG_INFO,"GyGlass",
-   "native_entry=loaded poll_hook=%d renderer=experimental",enabled_?1:0);
+  if(active_) {
+   __android_log_print(ANDROID_LOG_INFO,"GyGlass",
+    "native_entry=loaded poll_hook=%d renderer=experimental",enabled_?1:0);
+   __android_log_print(ANDROID_LOG_INFO,"GyGlass",
+    "GY_EVT=QUEUE value=%s",enabled_?"ok":"fail");
+  }
  }
  void onPoll(JNIEnv* env) noexcept {
   if(!enabled_||!env||env->ExceptionCheck()||
@@ -76,7 +82,15 @@ class GyGlassModule final:public zygisk::ModuleBase {
   int64_t now=static_cast<int64_t>(ts.tv_sec)*1000000000LL+ts.tv_nsec;
   if(busy_||now<next_ns_)return;
   busy_=true;next_ns_=now+1500000000LL;
-  refresh_config();
+  if(!main_thread_logged_) {
+   main_thread_logged_=true;
+   __android_log_print(ANDROID_LOG_INFO,"GyGlass","GY_EVT=MAIN_THREAD value=ok");
+  }
+  // Root IPC is bounded but never run on every native poll; cache the preset.
+  if(now>=next_config_ns_){
+   refresh_config();
+   next_config_ns_=now+8000000000LL;
+  }
   jobject kb=gyglass::discover_keyboard(env);
   if(kb){
    jclass vc=env->FindClass("android/view/View");
@@ -85,8 +99,15 @@ class GyGlassModule final:public zygisk::ModuleBase {
    if(env->ExceptionCheck())env->ExceptionClear();
    if(vc)env->DeleteLocalRef(vc);
    if(visible){
-    int status=gyglass::apply_keyboard(env,kb,config_);
-    report(status);next_ns_=now+3000000000LL;
+    if(!keyboard_logged_) {
+     keyboard_logged_=true;
+     __android_log_print(ANDROID_LOG_INFO,"GyGlass","GY_EVT=KEYBOARD value=ok");
+    }
+    gyglass::PatchEvidence evidence{};
+    int status=gyglass::apply_keyboard(env,kb,config_,&evidence);
+    report(status);
+    report_points(status,evidence);
+    next_ns_=now+3000000000LL;
    }
    env->DeleteLocalRef(kb);
   }else report(-1);
@@ -111,16 +132,40 @@ class GyGlassModule final:public zygisk::ModuleBase {
   if(status==last_status_)return;
   last_status_=status;
   __android_log_print(ANDROID_LOG_INFO,"GyGlass",
-   "keyboard_map_status=%d mode=%u opacity=%u",status,
+   "keyboard_map_result=%d mode=%u opacity=%u",status,
    static_cast<unsigned>(config_.mode),static_cast<unsigned>(config_.key_opacity_percent));
+ }
+ void report_points(int status,const gyglass::PatchEvidence& ev) noexcept {
+  // Reports evidence for each actual resource. A successful map write is
+  // NOT proof that Android composed translucent pixels on screen.
+  const char* keys[]={"SIGNATURE","MONET","COLORMAP",
+                     "NORMAL_KEY","SPECIAL_KEY","NORMAL_BORDER","SPECIAL_BORDER"};
+  int values[7]{
+   ev.signature_ok?1:(status==1?2:0),
+   ev.monet_ok?1:(ev.map_ok?2:0),
+   status==4||status==5?1:(status>=1&&status<=3?2:0),
+   ev.key_status[0]?1:(ev.map_ok&&ev.monet_ok?2:0),
+   ev.key_status[1]?1:(ev.map_ok&&ev.monet_ok?2:0),
+   ev.key_status[2]?1:(ev.map_ok&&ev.monet_ok?2:0),
+   ev.key_status[3]?1:(ev.map_ok&&ev.monet_ok?2:0)
+  };
+  for(int i=0;i<7;++i) {
+   if(last_points_[i]==values[i])continue;
+   last_points_[i]=values[i];
+   __android_log_print(ANDROID_LOG_INFO,"GyGlass",
+    "GY_EVT=%s value=%s",keys[i],values[i]==1?"ok":values[i]==2?"fail":"wait");
+  }
  }
  zygisk::Api* api_=nullptr;
  JNIEnv* env_=nullptr;
  gyglass::PresetConfig config_{};
  int companion_fd_=-1;
  bool active_=false,enabled_=false,busy_=false;
+ bool main_thread_logged_=false,keyboard_logged_=false;
+ int last_points_[7]{-1,-1,-1,-1,-1,-1,-1};
  int last_status_=-99;
  int64_t next_ns_=0;
+ int64_t next_config_ns_=0;
 };
 void replacement(JNIEnv* env,jobject queue,jlong ptr,jint timeout) {
  if(original)original(env,queue,ptr,timeout);
