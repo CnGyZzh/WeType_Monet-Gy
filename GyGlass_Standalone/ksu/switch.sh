@@ -27,4 +27,7 @@ mv -f "$T" "$F" || { rm -f "$T"; echo 'RESULT=ERROR commit failed'; exit 15; }
 restorecon "$F" >/dev/null 2>&1 || :
 printf '%s\n' "$mode" > "$S"
 echo "STATE=$mode"
+if [ "${GY_NO_RESTART:-0}" != 1 ]; then
+  am force-stop com.tencent.wetype >/dev/null 2>&1 && echo 'INPUT_METHOD_RESTARTED=1' || echo 'INPUT_METHOD_RESTARTED=0'
+fi
 echo 'RESULT=APPLIED; reopen keyboard for effect'
