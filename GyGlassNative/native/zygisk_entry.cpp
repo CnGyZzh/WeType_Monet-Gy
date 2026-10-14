@@ -8,6 +8,8 @@
 #include <android/log.h>
 #include <cstdint>
 #include <cstring>
+#include <cstdio>
+#include <sys/stat.h>
 #include "zygisk.hpp"
 #include "preset_bridge.hpp"
 #include "keyboard_patch.hpp"
@@ -22,14 +24,45 @@ class GyGlassModule;
 GyGlassModule* active_instance=nullptr;
 void replacement(JNIEnv*,jobject,jlong,jint);
 
+// A tiny second evidence channel independent of logcat (no user text).
+// Each record: Unix time, target PID, one event code. Root-only 0600 file.
+void write_stage(uint32_t pid,char stage) {
+ if(pid<=1 || pid>4194304 || !std::strchr("IZQqTVCAFX",stage))return;
+ const char* directory="/data/adb/modules/gyglass/logs";
+ (void)mkdir(directory,0700);
+ int fd=open("/data/adb/modules/gyglass/logs/native.events",
+             O_WRONLY|O_APPEND|O_CREAT|O_CLOEXEC|O_NOFOLLOW,0600);
+ if(fd<0)return;
+ struct stat st{};
+ if(fstat(fd,&st)!=0 || !S_ISREG(st.st_mode) || st.st_size>=32768) {
+  // Rotate bounded diagnostic data. No content is ever captured.
+  close(fd);
+  fd=open("/data/adb/modules/gyglass/logs/native.events",
+          O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC|O_NOFOLLOW,0600);
+  if(fd<0)return;
+ }
+ char row[80]{};
+ int len=std::snprintf(row,sizeof(row),"%lld %u %c\\n",
+                       static_cast<long long>(time(nullptr)),pid,stage);
+ if(len>0 && len<static_cast<int>(sizeof(row))) (void)write(fd,row,static_cast<size_t>(len));
+ close(fd);
+}
 void companion_handler(int fd) {
  unsigned char q=0;
- while(recv(fd,&q,1,0)==1 && q==kQuery) {
-  int dir=open(kFolder,O_RDONLY|O_DIRECTORY|O_CLOEXEC|O_NOFOLLOW);
-  auto config=gyglass::read_preset_at(dir);
-  if(dir>=0)close(dir);
-  auto reply=gyglass::make_reply(config);
-  if(send(fd,&reply,sizeof(reply),MSG_NOSIGNAL)!=static_cast<ssize_t>(sizeof(reply)))break;
+ while(recv(fd,&q,1,MSG_WAITALL)==1) {
+  if(q==kQuery){
+   int dir=open(kFolder,O_RDONLY|O_DIRECTORY|O_CLOEXEC|O_NOFOLLOW);
+   auto config=gyglass::read_preset_at(dir);
+   if(dir>=0)close(dir);
+   auto reply=gyglass::make_reply(config);
+   if(send(fd,&reply,sizeof(reply),MSG_NOSIGNAL)!=static_cast<ssize_t>(sizeof(reply)))break;
+  } else if(q=='E'){
+   unsigned char payload[5]{};
+   if(recv(fd,payload,sizeof(payload),MSG_WAITALL)!=static_cast<ssize_t>(sizeof(payload)))break;
+   uint32_t pid=0;
+   std::memcpy(&pid,payload,sizeof(pid));
+   write_stage(pid,static_cast<char>(payload[4]));
+  } else break;
  }
  close(fd);
 }
@@ -54,6 +87,7 @@ class GyGlassModule final:public zygisk::ModuleBase {
   if(companion_fd_>=0&&!api_->exemptFd(companion_fd_)) {
    close(companion_fd_);companion_fd_=-1;
   }
+  send_stage('I');
   __android_log_print(ANDROID_LOG_INFO,"GyGlass",
    "GY_EVT=COMPANION value=%s",companion_fd_>=0?"ok":"fail");
   JNINativeMethod m[]={{const_cast<char*>("nativePollOnce"),
@@ -69,6 +103,8 @@ class GyGlassModule final:public zygisk::ModuleBase {
  }
  void postAppSpecialize(const zygisk::AppSpecializeArgs*) override {
   if(active_) {
+   send_stage('Z');
+   send_stage(enabled_?'Q':'q');
    __android_log_print(ANDROID_LOG_INFO,"GyGlass",
     "native_entry=loaded poll_hook=%d renderer=experimental",enabled_?1:0);
    __android_log_print(ANDROID_LOG_INFO,"GyGlass",
@@ -84,6 +120,7 @@ class GyGlassModule final:public zygisk::ModuleBase {
   busy_=true;next_ns_=now+1500000000LL;
   if(!main_thread_logged_) {
    main_thread_logged_=true;
+   send_stage('T');
    __android_log_print(ANDROID_LOG_INFO,"GyGlass","GY_EVT=MAIN_THREAD value=ok");
   }
   // Root IPC is bounded but never run on every native poll; cache the preset.
@@ -101,11 +138,18 @@ class GyGlassModule final:public zygisk::ModuleBase {
    if(visible){
     if(!keyboard_logged_) {
      keyboard_logged_=true;
+     send_stage('V');
      __android_log_print(ANDROID_LOG_INFO,"GyGlass","GY_EVT=KEYBOARD value=ok");
     }
     gyglass::PatchEvidence evidence{};
     int status=gyglass::apply_keyboard(env,kb,config_,&evidence);
     report(status);
+    if(status!=last_event_status_){
+     last_event_status_=status;
+     if(status==4)send_stage('C');
+     else if(status==5)send_stage('A');
+     else if(status>0 && status<4)send_stage('F');
+    }
     report_points(status,evidence);
     next_ns_=now+3000000000LL;
    }
@@ -115,6 +159,13 @@ class GyGlassModule final:public zygisk::ModuleBase {
   busy_=false;
  }
  private:
+ void send_stage(char stage) noexcept {
+  if(companion_fd_<0)return;
+  unsigned char event[6]{'E',0,0,0,0,static_cast<unsigned char>(stage)};
+  const uint32_t pid=static_cast<uint32_t>(getpid());
+  std::memcpy(event+1,&pid,sizeof(pid));
+  (void)send(companion_fd_,event,sizeof(event),MSG_NOSIGNAL|MSG_DONTWAIT);
+ }
  void refresh_config() noexcept {
   if(companion_fd_<0)return;
   timeval lim{};lim.tv_usec=30000;
@@ -164,6 +215,7 @@ class GyGlassModule final:public zygisk::ModuleBase {
  bool main_thread_logged_=false,keyboard_logged_=false;
  int last_points_[7]{-1,-1,-1,-1,-1,-1,-1};
  int last_status_=-99;
+ int last_event_status_=-99;
  int64_t next_ns_=0;
  int64_t next_config_ns_=0;
 };
