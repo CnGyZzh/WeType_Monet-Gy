@@ -75,8 +75,8 @@ jobs:
           sha256sum GyGlassNative/out/arm64-v8a.so > GyGlassNative/out/SHA256SUMS.txt
           file GyGlassNative/out/arm64-v8a.so
           readelf -Ws GyGlassNative/out/arm64-v8a.so > /tmp/gyglass-symbols.txt
-          grep -E '[[:space:]]GLOBAL[[:space:]]+DEFAULT[[:space:]]' /tmp/gyglass-symbols.txt | grep -q 'zygisk_module_entry'
-          grep -E '[[:space:]]GLOBAL[[:space:]]+DEFAULT[[:space:]]' /tmp/gyglass-symbols.txt | grep -q 'zygisk_companion_entry'
+          grep -E -q '[[:space:]]GLOBAL[[:space:]]+DEFAULT[[:space:]]+[^[:space:]]*[[:space:]]+zygisk_module_entry' /tmp/gyglass-symbols.txt
+          grep -E -q '[[:space:]]GLOBAL[[:space:]]+DEFAULT[[:space:]]+[^[:space:]]*[[:space:]]+zygisk_companion_entry' /tmp/gyglass-symbols.txt
       - name: Write diagnostics
         if: always()
         shell: bash
