@@ -45,6 +45,8 @@ jobs:
           bash GyGlassNative/tests/diagnose_test.sh
           g++ -std=c++17 -Wall -Wextra -Werror GyGlassNative/tests/compatibility_test.cpp -o /tmp/gyglass_compat_test
           /tmp/gyglass_compat_test
+          g++ -std=c++17 -Wall -Wextra -Werror GyGlassNative/tests/host_signature_test.cpp -o /tmp/gyglass_host_test
+          /tmp/gyglass_host_test
       - name: Install Android NDK and CMake
         id: sdk
         shell: bash
