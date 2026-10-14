@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>GyGlass</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:system-ui,"Noto Sans SC",sans-serif;margin:0;min-height:100vh;color:#373243;background:linear-gradient(155deg,#e6e1f2,#cfcee8 65%,#d5e1ed)}
+main{max-width:520px;margin:auto;padding:32px 20px}
+h1{font-size:29px;margin:0 0 6px}
+.sub{font-size:13px;color:#766f84;line-height:1.8}
+.panel{margin-top:25px;padding:18px;border-radius:25px;background:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.7)}
+button{display:block;width:100%;border:1px solid rgba(158,143,178,.22);border-radius:18px;text-align:left;background:rgba(192,186,207,.15);padding:18px;margin:10px 0;font:inherit;color:inherit}
+button.on{outline:2px solid rgba(131,112,163,.34)}
+button:disabled{opacity:.5}
+button b{display:block;margin-bottom:4px}button small{color:#726d7c}
+#state{white-space:pre-wrap;font-size:13px;margin-top:16px;line-height:1.7}
+</style></head><body><main><h1>GyGlass</h1><div class="sub">系统动态配色 · 柔和玻璃键帽 · 双预设</div>
+<section class="panel"><button id="seamless"><b>一体式</b><small>默认 · 无字母键帽背景</small></button>
+<button id="independent"><b>独立玻璃键帽</b><small>同色半透明，与底板保持柔和层次</small></button>
+<div id="state">读取状态中…</div></section>
+<p class="sub">原生绘制引擎尚在开发中。当前页面仅验证预设读写，不表示玻璃效果已生效。</p>
+</main><script>
+'use strict';
+const path='/data/adb/modules/gyglass/preset.sh', el=document.getElementById('state');
+const buttons=[document.getElementById('seamless'),document.getElementById('independent')];
+let busy=false;
+function run(cmd){return new Promise((resolve,reject)=>{if(!window.ksu||typeof window.ksu.exec!=='function'){reject(new Error('KernelSU WebUI API 不可用'));return;}const callback='gycb'+Math.random().toString(36).slice(2);window[callback]=(code,out,err)=>{delete window[callback];resolve({code:Number(code),out:String(out||''),err:String(err||'')});};try{window.ksu.exec(cmd,callback);}catch(e){delete window[callback];reject(e);}})}
+function mark(k){buttons.forEach(b=>b.classList.toggle('on',b.id===k));}
+async function update(value){if(busy)return;busy=true;buttons.forEach(b=>b.disabled=true);el.textContent='正在保存…';try{const r=await run('sh '+path+' '+value);if(r.code!==0||!r.out.includes('RESULT=SAVED'))throw Error(r.err||r.out||'保存失败');mark(value);el.textContent='已保存：'+(value==='independent'?'独立玻璃键帽':'一体式')+'。原生渲染尚未接入。';}catch(e){el.textContent='切换失败：'+e.message;}finally{busy=false;buttons.forEach(b=>b.disabled=false);}}
+buttons.forEach(b=>b.addEventListener('click',()=>update(b.id)));
+run('sh '+path+' status').then(r=>{if(r.code)throw Error(r.err||r.out);const m=r.out.match(/^MODE=(seamless|independent)$/m);if(!m)throw Error('状态格式异常');mark(m[1]);el.textContent='当前预设：'+(m[1]==='independent'?'独立玻璃键帽':'一体式')+'。渲染尚未启用。';}).catch(e=>el.textContent='读取失败：'+e.message);
+</script></body></html>
