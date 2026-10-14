@@ -28,11 +28,30 @@ not proof of actual keyboard rendering. Do not flash an incomplete binary.
 - Privacy: diagnostic output is version, Android API, profile, and hook readiness only;
   no text, clipboard, chats, or keyboard contents are collected.
 
-## Safe runtime resource matching
-- `native/host_signature.hpp` defines two historical obfuscated HLD resource-class
-  alternatives (`...hld.s` / `...hld.o`) and the known key/background field variants.
-- Any future renderer must query those names against the actual host ClassLoader;
-  missing a required normal-key / special-key / border field disables that hook.
-- These are candidate signatures with tests, not yet installed runtime hooks.
-- The drawing backend and keyboard-bounded blur are still incomplete. Do not flash as
-  a working liquid-glass solution, and never ship a no-op Zygisk module as complete.
+## Host APK reverse mapping (v31.3)
+- The user supplied the official WeType APK as a *local reference only*; its binary is not stored in this repository or module.
+- AndroidManifest.xml: `com.tencent.wetype`, `versionName=4.0.0`, `versionCode=57206`.
+- The app's About page independently displays `4.0.0.58111`. Do not assume it equals Android's `versionName`.
+- `hostmaps/wetype_4_0_0_57206.json` records layout/resource attributes and
+  DEX method signatures with a SHA-256 identifying the analyzed binary.
+- Regular QWERTY letters: `ime_color_btn_white_bg`, `ime_color_btn_white_border`.
+- Shift, delete, number, emoji and enter: `ime_color_btn_grey_bg`,
+  `ime_color_btn_grey_border`.
+- The spacebar also uses `ime_color_btn_white_bg`. A global override of all
+  "white" buttons could make the spacebar unexpectedly disappear, so rendering
+  must classify key role before applying style.
+- Verified self-drawn `KeyboardView.kt`: `...keyboard.selfdraw.o`,
+  `onDraw(Canvas)`, `getColorMap()`, `getButtonDrawer()`.
+- Verified `ButtonDrawer.kt`: `...keyboard.selfdraw.e`, method `d(Canvas)`.
+- The previous speculative `...hld.s/o` field signatures were **removed**.
+  `host_signature.hpp` now represents actual DEX method contracts.
+- Runtime matching and hooking those methods remains unfinished; class names may
+  change in subsequent obfuscated builds, and matching metadata is not proof of
+  functional rendering.
+- The new diagnostics identify the real manifest buildCode and explicitly state
+  `RENDERER=NOT_IMPLEMENTED` until hooks are verified.
+- Per-chat wallpaper appearance cannot be derived from Monet alone; it requires
+  a correctly composited transparent IME window and *keyboard-bounded* blur.
+- No clipboard/text/wallpaper images are read during these compatibility checks.
+
+Do not package as a user-ready KernelSU ZIP until the scoped renderer is functional.
