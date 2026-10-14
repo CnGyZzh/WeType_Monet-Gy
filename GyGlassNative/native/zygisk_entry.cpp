@@ -42,7 +42,7 @@ void write_stage(uint32_t pid,char stage) {
   if(fd<0)return;
  }
  char row[80]{};
- int len=std::snprintf(row,sizeof(row),"%lld %u %c\\n",
+ int len=std::snprintf(row,sizeof(row),"%lld %u %c\n",
                        static_cast<long long>(time(nullptr)),pid,stage);
  if(len>0 && len<static_cast<int>(sizeof(row))) (void)write(fd,row,static_cast<size_t>(len));
  close(fd);
