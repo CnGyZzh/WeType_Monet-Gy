@@ -27,3 +27,12 @@ not proof of actual keyboard rendering. Do not flash an incomplete binary.
   keyboard-bounded glass renderer is independently tested.
 - Privacy: diagnostic output is version, Android API, profile, and hook readiness only;
   no text, clipboard, chats, or keyboard contents are collected.
+
+## Safe runtime resource matching
+- `native/host_signature.hpp` defines two historical obfuscated HLD resource-class
+  alternatives (`...hld.s` / `...hld.o`) and the known key/background field variants.
+- Any future renderer must query those names against the actual host ClassLoader;
+  missing a required normal-key / special-key / border field disables that hook.
+- These are candidate signatures with tests, not yet installed runtime hooks.
+- The drawing backend and keyboard-bounded blur are still incomplete. Do not flash as
+  a working liquid-glass solution, and never ship a no-op Zygisk module as complete.
