@@ -1,4 +1,4 @@
-name: GyGlass Independent Hook Test Build
+name: GyGlass v30 Test Build
 on:
   push:
     branches: [gy-glass-v29-test]
@@ -53,13 +53,13 @@ jobs:
         run: |
           cp app/build/outputs/apk/debug/app-debug.apk ksu/gyhook.apk
           python3 package.py
-          unzip -t out/GyGlass_Standalone_v29.zip
-          sha256sum out/GyGlass_Standalone_v29.zip | tee out/SHA256SUMS.txt
+          unzip -t out/GyGlass_v30_KSU.zip
+          sha256sum out/GyGlass_v30_KSU.zip | tee out/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: GyGlass-v29-test-KSU
+          name: GyGlass-v30-test-KSU
           path: |
-            GyGlass_Standalone/out/GyGlass_Standalone_v29.zip
+            GyGlass_Standalone/out/GyGlass_v30_KSU.zip
             GyGlass_Standalone/out/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 14
@@ -69,7 +69,7 @@ jobs:
         run: |
           mkdir -p GyGlass_Standalone/out
           {
-            echo 'GyGlass v29 CI report'
+            echo 'GyGlass v30 CI report'
             echo "run_id=$GITHUB_RUN_ID"
             echo "setup_java=${{ steps.java.outcome }}"
             echo "setup_sdk35=${{ steps.sdk35.outcome }}"
@@ -83,10 +83,10 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -f GyGlass_Standalone/out/build-report.txt
-          if test -f GyGlass_Standalone/out/GyGlass_Standalone_v29.zip; then
-            git add -f GyGlass_Standalone/out/GyGlass_Standalone_v29.zip GyGlass_Standalone/out/SHA256SUMS.txt
+          if test -f GyGlass_Standalone/out/GyGlass_v30_KSU.zip; then
+            git add -f GyGlass_Standalone/out/GyGlass_v30_KSU.zip GyGlass_Standalone/out/SHA256SUMS.txt
           fi
           if ! git diff --cached --quiet; then
-            git commit -m 'ci: publish GyGlass build report and test ZIP [skip ci]'
+            git commit -m 'ci: publish GyGlass v30 build report and test ZIP [skip ci]'
             git push origin HEAD:gy-glass-v29-test
           fi
