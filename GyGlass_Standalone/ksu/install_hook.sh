@@ -18,5 +18,5 @@ if [ "$RC" -eq 0 ] && printf '%s' "$OUT" | grep -q Success; then
   exit 0
 fi
 echo "HOOK_ERROR=$OUT"
-echo 'HOOK_NOTE=Keep this Hook component enabled in LSPosed
+echo 'HOOK_NOTE=Enable GyGlass in LSPosed for WeChat Input Method'
 exit 21
