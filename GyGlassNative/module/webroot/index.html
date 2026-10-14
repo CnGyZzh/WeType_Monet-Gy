@@ -11,20 +11,57 @@ button{display:block;width:100%;border:1px solid rgba(158,143,178,.22);border-ra
 button.on{outline:2px solid rgba(131,112,163,.34)}
 button:disabled{opacity:.5}
 button b{display:block;margin-bottom:4px}button small{color:#726d7c}
-#state{white-space:pre-wrap;font-size:13px;margin-top:16px;line-height:1.7}
+#compat{white-space:pre-wrap;font-size:12px;margin-top:10px;line-height:1.7;color:#746b81}#state{white-space:pre-wrap;font-size:13px;margin-top:16px;line-height:1.7}
 </style></head><body><main><h1>GyGlass</h1><div class="sub">系统动态配色 · 柔和玻璃键帽 · 双预设</div>
 <section class="panel"><button id="seamless"><b>一体式</b><small>默认 · 无字母键帽背景</small></button>
 <button id="independent"><b>独立玻璃键帽</b><small>同色半透明，与底板保持柔和层次</small></button>
-<div id="state">读取状态中…</div></section>
+<div id="state">读取状态中…</div><div id="compat">正在读取输入法版本…</div></section>
 <p class="sub">原生绘制引擎尚在开发中。当前页面仅验证预设读写，不表示玻璃效果已生效。</p>
 </main><script>
 'use strict';
-const path='/data/adb/modules/gyglass/preset.sh', el=document.getElementById('state');
+const path='/data/adb/modules/gyglass/preset.sh';
+const diagnostic='/data/adb/modules/gyglass/diagnose.sh';
+const el=document.getElementById('state');
+const info=document.getElementById('compat');
 const buttons=[document.getElementById('seamless'),document.getElementById('independent')];
 let busy=false;
-function run(cmd){return new Promise((resolve,reject)=>{if(!window.ksu||typeof window.ksu.exec!=='function'){reject(new Error('KernelSU WebUI API 不可用'));return;}const callback='gycb'+Math.random().toString(36).slice(2);window[callback]=(code,out,err)=>{delete window[callback];resolve({code:Number(code),out:String(out||''),err:String(err||'')});};try{window.ksu.exec(cmd,callback);}catch(e){delete window[callback];reject(e);}})}
-function mark(k){buttons.forEach(b=>b.classList.toggle('on',b.id===k));}
-async function update(value){if(busy)return;busy=true;buttons.forEach(b=>b.disabled=true);el.textContent='正在保存…';try{const r=await run('sh '+path+' '+value);if(r.code!==0||!r.out.includes('RESULT=SAVED'))throw Error(r.err||r.out||'保存失败');mark(value);el.textContent='已保存：'+(value==='independent'?'独立玻璃键帽':'一体式')+'。原生渲染尚未接入。';}catch(e){el.textContent='切换失败：'+e.message;}finally{busy=false;buttons.forEach(b=>b.disabled=false);}}
+function run(cmd){return new Promise((resolve,reject)=>{
+  if(!window.ksu||typeof window.ksu.exec!=='function') {reject(new Error('KernelSU WebUI API 不可用'));return;}
+  const callback='gycb'+Math.random().toString(36).slice(2);
+  window[callback]=(code,out,err)=>{delete window[callback];resolve({code:Number(code),out:String(out||''),err:String(err||'')});};
+  try{window.ksu.exec(cmd,callback);}catch(e){delete window[callback];reject(e);}
+});}
+function mark(mode){buttons.forEach(b=>b.classList.toggle('on',b.id===mode));}
+function fields(text){const kv={};for(const line of text.split('\n')){const ix=line.indexOf('=');if(ix>0)kv[line.slice(0,ix)]=line.slice(ix+1).trim();}return kv;}
+function compatibilityMessage(c) {
+ switch(c){
+  case 'KNOWN_BUILD_NOT_RENDER_TESTED':return '已识别版本，绘制兼容性尚待测试';
+  case 'NEW_BUILD_NEEDS_SIGNATURE_CHECK':return '检测到新版本，需重新核验绘制入口';
+  case 'UNRECOGNIZED_HOST_VERSION':return '未知版本，禁止假定兼容';
+  case 'INPUT_METHOD_NOT_INSTALLED':return '未检测到微信输入法';
+  default:return '版本状态待确认';
+ }
+}
+async function refresh(){
+ const r=await run('sh '+diagnostic);
+ if(r.code!==0)throw Error(r.err||r.out||'诊断失败');
+ const kv=fields(r.out);
+ if(!['seamless','independent'].includes(kv.MODE))throw Error('预设状态无效');
+ mark(kv.MODE);
+ el.textContent='当前预设：'+(kv.MODE==='independent'?'独立玻璃键帽':'一体式');
+ info.textContent='微信输入法 '+(kv.INPUT_VERSION||'未知')+' · Android API '+(kv.ANDROID_SDK||'未知')+'\n'+
+  compatibilityMessage(kv.COMPAT)+'\n原生渲染：尚未接入；选择预设仅保存配置。';
+}
+async function update(value) {
+ if(busy)return;
+ busy=true;buttons.forEach(b=>b.disabled=true);el.textContent='正在保存预设…';
+ try {
+  const r=await run('sh '+path+' '+value);
+  if(r.code!==0||!r.out.includes('RESULT=SAVED'))throw Error(r.err||r.out||'保存失败');
+  await refresh();
+ }catch(e){el.textContent='操作失败：'+e.message;}
+ finally{busy=false;buttons.forEach(b=>b.disabled=false);}
+}
 buttons.forEach(b=>b.addEventListener('click',()=>update(b.id)));
-run('sh '+path+' status').then(r=>{if(r.code)throw Error(r.err||r.out);const m=r.out.match(/^MODE=(seamless|independent)$/m);if(!m)throw Error('状态格式异常');mark(m[1]);el.textContent='当前预设：'+(m[1]==='independent'?'独立玻璃键帽':'一体式')+'。渲染尚未启用。';}).catch(e=>el.textContent='读取失败：'+e.message);
+refresh().catch(e=>{el.textContent='状态读取失败：'+e.message;info.textContent='无法确认当前适配状态';});
 </script></body></html>
