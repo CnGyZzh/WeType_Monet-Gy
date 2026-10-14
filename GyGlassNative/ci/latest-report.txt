@@ -1,5 +1,5 @@
-run_id=38519712371
-commit=abb783bc44500416ed65f6400db97aaa8c3238fa
+run_id=38519938366
+commit=ee6b3d4d69f9c3ca2dc6175e3783bb1cd1375586
 source_verify=success
 sdk=success
 native_compile=failure
@@ -67,7 +67,7 @@ CMake Deprecation Warning at /usr/local/lib/android/sdk/ndk/27.2.12479018/build/
   to work with policies introduced by <max> or earlier.
 Call Stack (most recent call first):
   /tmp/gyglass-build/CMakeFiles/3.31.6/CMakeSystem.cmake:6 (include)
-  /tmp/gyglass-build/CMakeFiles/CMakeScratch/TryCompile-o5S0JQ/CMakeLists.txt:2 (project)
+  /tmp/gyglass-build/CMakeFiles/CMakeScratch/TryCompile-UpJD3g/CMakeLists.txt:2 (project)
 
 
 CMake Deprecation Warning at /usr/local/lib/android/sdk/ndk/27.2.12479018/build/cmake/android-legacy.toolchain.cmake:35 (cmake_minimum_required):
@@ -80,7 +80,7 @@ CMake Deprecation Warning at /usr/local/lib/android/sdk/ndk/27.2.12479018/build/
 Call Stack (most recent call first):
   /usr/local/lib/android/sdk/ndk/27.2.12479018/build/cmake/android.toolchain.cmake:55 (include)
   /tmp/gyglass-build/CMakeFiles/3.31.6/CMakeSystem.cmake:6 (include)
-  /tmp/gyglass-build/CMakeFiles/CMakeScratch/TryCompile-o5S0JQ/CMakeLists.txt:2 (project)
+  /tmp/gyglass-build/CMakeFiles/CMakeScratch/TryCompile-UpJD3g/CMakeLists.txt:2 (project)
 
 
 CMake Deprecation Warning at /usr/local/lib/android/sdk/ndk/27.2.12479018/build/cmake/flags.cmake:18 (cmake_minimum_required):
@@ -94,14 +94,14 @@ Call Stack (most recent call first):
   /usr/local/share/cmake-3.31/Modules/Platform/Android-Clang.cmake:23 (include)
   /usr/local/share/cmake-3.31/Modules/Platform/Android-Clang-CXX.cmake:1 (include)
   /usr/local/share/cmake-3.31/Modules/CMakeCXXInformation.cmake:48 (include)
-  /tmp/gyglass-build/CMakeFiles/CMakeScratch/TryCompile-o5S0JQ/CMakeLists.txt:2 (project)
+  /tmp/gyglass-build/CMakeFiles/CMakeScratch/TryCompile-UpJD3g/CMakeLists.txt:2 (project)
 
 
 -- Detecting CXX compiler ABI info - done
 -- Check for working CXX compiler: /usr/local/lib/android/sdk/ndk/27.2.12479018/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ - skipped
 -- Detecting CXX compile features
 -- Detecting CXX compile features - done
--- Configuring done (0.6s)
+-- Configuring done (1.0s)
 -- Generating done (0.0s)
 -- Build files have been written to: /tmp/gyglass-build
 [1/2] Building CXX object CMakeFiles/gyglass.dir/zygisk_entry.cpp.o
