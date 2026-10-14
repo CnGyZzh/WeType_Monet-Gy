@@ -65,7 +65,7 @@ void companion_handler(int fd) {
      struct stat st{};
      if(fstat(out,&st)==0 && S_ISREG(st.st_mode) && st.st_size<16384) {
       char row[72]{};
-      const int n=std::snprintf(row,sizeof(row),"NATIVE_EVENT_PID=%ld NATIVE_EVENT=%c\\n",
+      const int n=std::snprintf(row,sizeof(row),"NATIVE_EVENT_PID=%ld NATIVE_EVENT=%c\n",
                               static_cast<long>(pid),event);
       if(n>0 && static_cast<size_t>(n)<sizeof(row)) (void)write(out,row,static_cast<size_t>(n));
      }
