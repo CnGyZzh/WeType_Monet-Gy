@@ -1,67 +1,73 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>GyGlass</title>
 <style>
-*{box-sizing:border-box}
-body{font-family:system-ui,"Noto Sans SC",sans-serif;margin:0;min-height:100vh;color:#373243;background:linear-gradient(155deg,#e6e1f2,#cfcee8 65%,#d5e1ed)}
-main{max-width:520px;margin:auto;padding:32px 20px}
-h1{font-size:29px;margin:0 0 6px}
-.sub{font-size:13px;color:#766f84;line-height:1.8}
-.panel{margin-top:25px;padding:18px;border-radius:25px;background:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.7)}
-button{display:block;width:100%;border:1px solid rgba(158,143,178,.22);border-radius:18px;text-align:left;background:rgba(192,186,207,.15);padding:18px;margin:10px 0;font:inherit;color:inherit}
-button.on{outline:2px solid rgba(131,112,163,.34)}
-button:disabled{opacity:.5}
-button b{display:block;margin-bottom:4px}button small{color:#726d7c}
-#compat{white-space:pre-wrap;font-size:12px;margin-top:10px;line-height:1.7;color:#746b81}#state{white-space:pre-wrap;font-size:13px;margin-top:16px;line-height:1.7}
-</style></head><body><main><h1>GyGlass</h1><div class="sub">系统动态配色 · 柔和玻璃键帽 · 双预设</div>
-<section class="panel"><button id="seamless"><b>一体式</b><small>默认 · 无字母键帽背景</small></button>
-<button id="independent"><b>独立玻璃键帽</b><small>同色半透明，与底板保持柔和层次</small></button>
-<div id="state">读取状态中…</div><div id="compat">正在读取输入法版本…</div></section>
-<p class="sub">原生绘制引擎尚在开发中。当前页面仅验证预设读写，不表示玻璃效果已生效。</p>
+:root{font-family:system-ui,"Noto Sans SC",sans-serif;color:#373246}*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:linear-gradient(148deg,#ebe6f2,#d7d0e7 55%,#d5dfeb)}
+main{max-width:520px;margin:auto;padding:30px 18px 44px}h1{margin:0;font-size:29px;letter-spacing:-.6px}
+.sub{font-size:13px;color:#746d82;line-height:1.7}
+.card{margin-top:22px;border-radius:23px;background:rgba(255,255,255,.39);border:1px solid rgba(255,255,255,.65);padding:18px;box-shadow:0 10px 36px rgba(75,60,99,.08)}
+.choice{padding:15px 16px;display:block;width:100%;border:1px solid rgba(119,100,150,.25);background:rgba(164,148,192,.1);border-radius:17px;margin:10px 0;text-align:left;font:inherit;color:inherit}
+.choice b{display:block;font-size:15px}.choice small{display:block;margin-top:4px;color:#797184}
+.choice.selected{border-color:#8874ab;background:rgba(163,146,195,.28)}.choice:disabled{opacity:.55}
+.head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:20px}
+input[type=range]{width:100%;accent-color:#8874ab;margin:16px 0 5px}
+.preview{padding:12px 8px;border-radius:17px;background:rgba(158,147,181,.19);display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-top:12px}
+.key{height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#373246}
+.muted{font-size:12px;color:#766e82;line-height:1.65}#state,#compat{white-space:pre-wrap}
+</style></head>
+<body><main><h1>GyGlass</h1><div class="sub">动态配色 · 原生玻璃键盘 · Gy</div>
+<section class="card"><strong>按键风格</strong>
+<button type="button" class="choice" id="seamless"><b>一体式</b><small>默认 · 字母键无独立背景</small></button>
+<button type="button" class="choice" id="independent"><b>独立玻璃键帽</b><small>与底板同色系，柔和半透明</small></button>
+<div class="head"><strong>键帽背景不透明度</strong><strong id="percent">16%</strong></div>
+<input id="opacity" type="range" min="1" max="100" value="16" step="1" aria-label="键帽背景不透明度">
+<div class="muted">1% 极淡 · 默认 16% · 100% 不透明。切换一体式不清除此设置。</div>
+<div class="preview" id="preview"></div>
+<div class="muted" id="state">读取配置中…</div></section>
+<section class="card"><strong>适配诊断</strong><div class="muted" id="compat">正在检测…</div>
+<div class="muted">保存成功不代表绘制已生效；真实状态请查看系统日志中的 GyGlass 记录。</div></section>
 </main><script>
 'use strict';
-const path='/data/adb/modules/gyglass/preset.sh';
-const diagnostic='/data/adb/modules/gyglass/diagnose.sh';
-const el=document.getElementById('state');
-const info=document.getElementById('compat');
-const buttons=[document.getElementById('seamless'),document.getElementById('independent')];
-let busy=false;
+const sh='/data/adb/modules/gyglass/preset.sh',diag='/data/adb/modules/gyglass/diagnose.sh';
+const els={seamless:document.getElementById('seamless'),independent:document.getElementById('independent'),
+opacity:document.getElementById('opacity'),percent:document.getElementById('percent'),
+preview:document.getElementById('preview'),state:document.getElementById('state'),
+compat:document.getElementById('compat')};
+let mode='seamless',busy=false,opacity=16;
+for(const key of 'QWERTYU'){const el=document.createElement('div');el.className='key';el.textContent=key;els.preview.appendChild(el);}
 function run(cmd){return new Promise((resolve,reject)=>{
-  if(!window.ksu||typeof window.ksu.exec!=='function') {reject(new Error('KernelSU WebUI API 不可用'));return;}
-  const callback='gycb'+Math.random().toString(36).slice(2);
-  window[callback]=(code,out,err)=>{delete window[callback];resolve({code:Number(code),out:String(out||''),err:String(err||'')});};
-  try{window.ksu.exec(cmd,callback);}catch(e){delete window[callback];reject(e);}
+if(!window.ksu||typeof window.ksu.exec!=='function'){reject(Error('当前 KernelSU 不支持 WebUI 执行接口'));return;}
+const cb='gycb'+Math.random().toString(36).slice(2);
+window[cb]=(code,out,err)=>{delete window[cb];resolve({code:Number(code),out:String(out||''),err:String(err||'')});};
+try{window.ksu.exec(cmd,cb);}catch(e){delete window[cb];reject(e);}
 });}
-function mark(mode){buttons.forEach(b=>b.classList.toggle('on',b.id===mode));}
-function fields(text){const kv={};for(const line of text.split('\n')){const ix=line.indexOf('=');if(ix>0)kv[line.slice(0,ix)]=line.slice(ix+1).trim();}return kv;}
-function compatibilityMessage(c) {
- switch(c){
-  case 'KNOWN_PACKAGE_NOT_RENDER_TESTED':return '安装包版本已识别，玻璃渲染兼容性尚待验证';
-  case 'NEW_BUILD_NEEDS_SIGNATURE_CHECK':return '检测到新版本，需重新核验绘制入口';
-  case 'UNRECOGNIZED_HOST_VERSION':return '未知版本，禁止假定兼容';
-  case 'INPUT_METHOD_NOT_INSTALLED':return '未检测到微信输入法';
-  default:return '版本状态待确认';
- }
+function parse(text){const data={};for(const row of text.split('\n')){const i=row.indexOf('=');if(i>0)data[row.slice(0,i)]=row.slice(i+1).trim();}return data;}
+function paint(){
+els.seamless.classList.toggle('selected',mode==='seamless');
+els.independent.classList.toggle('selected',mode==='independent');
+els.opacity.value=opacity;els.percent.textContent=opacity+'%';
+for(const key of els.preview.children)key.style.backgroundColor=mode==='independent'?'rgba(154,137,185,'+(opacity/100)+')':'transparent';
 }
+function lock(value){busy=value;els.seamless.disabled=value;els.independent.disabled=value;els.opacity.disabled=value;}
 async function refresh(){
- const r=await run('sh '+diagnostic);
- if(r.code!==0)throw Error(r.err||r.out||'诊断失败');
- const kv=fields(r.out);
- if(!['seamless','independent'].includes(kv.MODE))throw Error('预设状态无效');
- mark(kv.MODE);
- el.textContent='当前预设：'+(kv.MODE==='independent'?'独立玻璃键帽':'一体式');
- info.textContent='微信输入法 '+(kv.INPUT_VERSION||'未知')+'（构建 '+(kv.BUILD_CODE||'未知')+'） · Android API '+(kv.ANDROID_SDK||'未知')+'\n'+
-  compatibilityMessage(kv.COMPAT)+'\n原生渲染：尚未接入；选择预设仅保存配置。';
+const r=await run('sh '+diag);
+if(r.code!==0)throw Error(r.err||r.out||'读取失败');
+const d=parse(r.out);
+mode=d.MODE==='independent'?'independent':'seamless';
+const n=Number(d.KEY_OPACITY||16);
+opacity=Number.isInteger(n)&&n>=1&&n<=100?n:16;paint();
+els.state.textContent='预设：'+(mode==='independent'?'独立式':'一体式')+' · 不透明度：'+opacity+'%';
+els.compat.textContent='微信输入法：'+(d.INPUT_VERSION||'未知')+'\n原生组件：'+(d.NATIVE_BINARY||'未检测')+'\n渲染状态：'+(d.RENDERER||'未验证')+'\n版本兼容性：'+(d.COMPAT||'未知');
 }
-async function update(value) {
- if(busy)return;
- busy=true;buttons.forEach(b=>b.disabled=true);el.textContent='正在保存预设…';
- try {
-  const r=await run('sh '+path+' '+value);
-  if(r.code!==0||!r.out.includes('RESULT=SAVED'))throw Error(r.err||r.out||'保存失败');
-  await refresh();
- }catch(e){el.textContent='操作失败：'+e.message;}
- finally{busy=false;buttons.forEach(b=>b.disabled=false);}
+async function save(arg){
+if(busy)return;lock(true);els.state.textContent='正在保存…';
+try{const r=await run('sh '+sh+' '+arg);if(r.code!==0||!r.out.includes('RESULT=SAVED'))throw Error(r.err||r.out||'保存失败');
+await refresh();els.state.textContent+=' · 配置已保存，需以实际渲染为准';
+}catch(e){els.state.textContent='保存失败：'+e.message;}finally{lock(false);}
 }
-buttons.forEach(b=>b.addEventListener('click',()=>update(b.id)));
-refresh().catch(e=>{el.textContent='状态读取失败：'+e.message;info.textContent='无法确认当前适配状态';});
+els.seamless.addEventListener('click',()=>save('seamless'));
+els.independent.addEventListener('click',()=>save('independent'));
+els.opacity.addEventListener('input',()=>{opacity=Number(els.opacity.value);paint();});
+els.opacity.addEventListener('change',()=>save('opacity '+String(els.opacity.value)));
+refresh().catch(e=>{els.state.textContent='诊断失败：'+e.message;});
 </script></body></html>
