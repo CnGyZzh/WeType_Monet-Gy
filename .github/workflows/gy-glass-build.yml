@@ -33,7 +33,7 @@ jobs:
           from pathlib import Path
           import re
           content = Path("GyGlass_Standalone/ksu/webroot/index.html").read_text()
-          match = re.search(r"<script>([\\s\\S]*?)</script>", content)
+          match = re.search(r"<script>(.*?)</script>", content, re.S)
           assert match, "WebUI JavaScript missing"
           Path("/tmp/gyglass-webui.js").write_text(match.group(1))
           PY
