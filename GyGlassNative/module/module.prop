@@ -1,6 +1,6 @@
 id=gyglass
 name=GyGlass
-version=v31.0-dev
-versionCode=310
+version=v31.1-dev
+versionCode=311
 author=Gy
-description=为微信输入法提供随系统配色变化的玻璃键盘样式，可在 WebUI 中切换一体式与柔和独立键帽。
+description=微信输入法玻璃键盘研发版，内置动态配色预设、双模式 WebUI 与版本兼容诊断；绘制引擎开发中。
