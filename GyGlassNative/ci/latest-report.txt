@@ -1,5 +1,5 @@
-run_id=38518138210
-commit=c8d62eade3a3b29fca6bf9c13a59299f979cee6a
+run_id=38518233845
+commit=6d46e00d0a90098e80c61ca69dcef6d9d47d0ab5
 source_verify=success
 sdk=success
 native_compile=success
@@ -67,7 +67,7 @@ CMake Deprecation Warning at /usr/local/lib/android/sdk/ndk/27.2.12479018/build/
   to work with policies introduced by <max> or earlier.
 Call Stack (most recent call first):
   /tmp/gyglass-build/CMakeFiles/3.31.6/CMakeSystem.cmake:6 (include)
-  /tmp/gyglass-build/CMakeFiles/CMakeScratch/TryCompile-w1fFvS/CMakeLists.txt:2 (project)
+  /tmp/gyglass-build/CMakeFiles/CMakeScratch/TryCompile-N5PB0Q/CMakeLists.txt:2 (project)
 
 
 CMake Deprecation Warning at /usr/local/lib/android/sdk/ndk/27.2.12479018/build/cmake/android-legacy.toolchain.cmake:35 (cmake_minimum_required):
@@ -80,7 +80,7 @@ CMake Deprecation Warning at /usr/local/lib/android/sdk/ndk/27.2.12479018/build/
 Call Stack (most recent call first):
   /usr/local/lib/android/sdk/ndk/27.2.12479018/build/cmake/android.toolchain.cmake:55 (include)
   /tmp/gyglass-build/CMakeFiles/3.31.6/CMakeSystem.cmake:6 (include)
-  /tmp/gyglass-build/CMakeFiles/CMakeScratch/TryCompile-w1fFvS/CMakeLists.txt:2 (project)
+  /tmp/gyglass-build/CMakeFiles/CMakeScratch/TryCompile-N5PB0Q/CMakeLists.txt:2 (project)
 
 
 CMake Deprecation Warning at /usr/local/lib/android/sdk/ndk/27.2.12479018/build/cmake/flags.cmake:18 (cmake_minimum_required):
@@ -94,7 +94,7 @@ Call Stack (most recent call first):
   /usr/local/share/cmake-3.31/Modules/Platform/Android-Clang.cmake:23 (include)
   /usr/local/share/cmake-3.31/Modules/Platform/Android-Clang-CXX.cmake:1 (include)
   /usr/local/share/cmake-3.31/Modules/CMakeCXXInformation.cmake:48 (include)
-  /tmp/gyglass-build/CMakeFiles/CMakeScratch/TryCompile-w1fFvS/CMakeLists.txt:2 (project)
+  /tmp/gyglass-build/CMakeFiles/CMakeScratch/TryCompile-N5PB0Q/CMakeLists.txt:2 (project)
 
 
 -- Detecting CXX compiler ABI info - done
