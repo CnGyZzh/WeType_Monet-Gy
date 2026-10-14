@@ -1,6 +1,6 @@
 id=Wetype_Monet
-name=Gy 玻璃键盘 · 独立 Hook 测试版
-version=v29.0-test
-versionCode=290
+name=GyGlass
+version=v30.0-test
+versionCode=300
 author=Gy
-description=Gy独立Hook，双预设KernelSU WebUI，无原WeTyper APK或激活页；需LSPosed作用域。
+description=微信输入法玻璃键盘美化，支持Monet动态配色、透明底板和双预设WebUI切换。
